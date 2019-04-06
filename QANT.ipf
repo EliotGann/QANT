@@ -10841,9 +10841,20 @@ function /s QANT_LoadNEXAFSfile_Dean(pathn) // Dean's XDAC
 		enoffset = "Default"
 	endif
 	grep /INDX /Q /E="-----------------------" fullpath
-	wave w_index
-	LoadWave/o/J/D/W/A/K=1/Q/V={"\t, "," $",0,2}/L={w_index[0]+1,w_index[0]+2,0,0,0} filename
-	wave Energy
+	wave /z w_index
+	if(w_index[0] < 1)
+		setdatafolder ::
+		killdatafolder /z $cleanupname(scanname,1)
+		return ""
+	endif
+	try
+		LoadWave/o/J/D/W/A/K=1/Q/V={"\t, "," $",0,2}/L={w_index[0]+1,w_index[0]+2,0,0,0} filename
+	catch
+		setdatafolder ::
+		killdatafolder /z $cleanupname(scanname,1)
+		return ""
+	endtry
+	wave /z Energy
 	if(waveexists(Energy))
 		duplicate Energy, EnergySetpoint
 		string listofwaves = addlistitem("EnergySetpoint",S_wavenames)
