@@ -2,7 +2,7 @@
 
 #include "elementlibrary"
 #include <Multi-peak fitting 2.0>
-Menu "QANT v1.11b"
+Menu "QANT v1.11c"
 	"Advanced Options", /Q, Execute/P/Q "Init_QANT_AdvPanel()"
 	help={"Advanced NEXAFS Analysis options"}
 End
@@ -638,7 +638,7 @@ function QANT_Loaderfunc()
 	dowindow /k QANTLoaderPanel
 	dowindow /k QANT_plot
 	//killdatafolder /Z NEXAFS
-	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.11b (Quick AS NEXAFS Tool)"
+	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.11c (Quick AS NEXAFS Tool)"
 	ModifyPanel /w=QANTLoaderPanel fixedSize=1
 	debuggeroptions debugOnError=0
 	newdatafolder /o/s NEXAFS
@@ -5167,7 +5167,7 @@ function QANT_ExportData(whichdata)
 			listofwaves = removefromlist(x_axis,listofwaves)
 			listofwaves = x_axis +";"+ listofwaves // put xaxis first
 		endif
-		header = "File Produced by QANTv1.11b by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
+		header = "File Produced by QANTv1.11c by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
 		header += "----------------------------------------------------\rList of dataseries and their notes:\r\r" 
 		for(j=0;j<itemsinlist(listofwaves);j+=1)
 			header += stringfromlist(j,listofwaves)+"\r"
@@ -10969,4 +10969,20 @@ Function QANT_CloneWindow([win,newwindowname,thisfolder])
 	
 	
 	SetDataFolder $curr_folder
+End
+
+Function QANT_Clone_but(ba) : ButtonControl
+	STRUCT WMButtonAction &ba
+
+	switch( ba.eventCode )
+		case 2: // mouse up
+			svar clonename = root:Nexafs:CloneName
+			QANT_CloneWindow(newwindowname=CloneName,thisfolder = 0)
+			
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
 End
