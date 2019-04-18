@@ -2,9 +2,11 @@
 
 #include "elementlibrary"
 #include <Multi-peak fitting 2.0>
-Menu "QANT v1.11c"
+Menu "QANT v1.12"
 	"Advanced Options", /Q, Execute/P/Q "Init_QANT_AdvPanel()"
 	help={"Advanced NEXAFS Analysis options"}
+	"about", /Q, Execute/P/Q "QANT_About_QANT()"
+	help={"About QANT"}
 End
 function /s QANT_NEXAFSfileEXt_AUmainasc() // MDA
 	return ".asc"
@@ -638,7 +640,7 @@ function QANT_Loaderfunc()
 	dowindow /k QANTLoaderPanel
 	dowindow /k QANT_plot
 	//killdatafolder /Z NEXAFS
-	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.11c (Quick AS NEXAFS Tool)"
+	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.12 (Quick AS NEXAFS Tool)"
 	ModifyPanel /w=QANTLoaderPanel fixedSize=1
 	debuggeroptions debugOnError=0
 	newdatafolder /o/s NEXAFS
@@ -776,7 +778,7 @@ function QANT_Loaderfunc()
 	QANT_LUT[33][0] = "SR14ID01IOC68:scaler1.S9"
 	QANT_LUT[33][1] = "BL_PHD_VF"
 	
-	svar directory,normchan,dnormchan,x_axis, peaksetfit, Colortable, matchstr, FileType, CloneName
+	svar directory,normchan,dnormchan,x_axis, peaksetfit, Colortable, matchstr, FileType, CloneName, CitationText
 	if(svar_exists(directory)==0)
 		string /g directory = ""
 	endif
@@ -804,6 +806,10 @@ function QANT_Loaderfunc()
 	if(svar_exists(CloneName)==0)
 		string /g CloneName=""
 	endif
+	if(svar_exists(CitationText)==0)
+		string /g CitationText="\JCQuick AS NEXAFS Tool (QANT): \ra program for NEXAFS loading and analysis \rdeveloped at the Australian Synchrotron\rE Gann, CR McNeill, A Tadich,\r BCC Cowie, L Thomsen\rJournal of synchrotron radiation, 2016\r\rdoi.org/10.1107/S1600577515018688"
+	endif
+	
 	
 	nvar CorExptime, NormCursors, subcursors, curax, curbx, curcx, curdx, cura, curb, curc, curd, HoldPeakWidth, HoldPeakPositions, HoldNexafsEdge, running, lastRunTicks, RunNumber, MatFittingXMax, MatFittingXMin, scanorder, lastscancol
 	if(nvar_exists(CorExptime)==0)
@@ -5167,7 +5173,7 @@ function QANT_ExportData(whichdata)
 			listofwaves = removefromlist(x_axis,listofwaves)
 			listofwaves = x_axis +";"+ listofwaves // put xaxis first
 		endif
-		header = "File Produced by QANTv1.11c by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
+		header = "File Produced by QANTv1.12 by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
 		header += "----------------------------------------------------\rList of dataseries and their notes:\r\r" 
 		for(j=0;j<itemsinlist(listofwaves);j+=1)
 			header += stringfromlist(j,listofwaves)+"\r"
@@ -10986,3 +10992,25 @@ Function QANT_Clone_but(ba) : ButtonControl
 
 	return 0
 End
+
+Window QANT_About_QANT() : Panel
+	PauseUpdate; Silent 1		// building window...
+	killwindow /z About_QANT
+	NewPanel /W=(824,354,1188,683) /n=About_QANT as "About QANT"
+	SetDrawLayer UserBack
+	SetDrawEnv fsize= 24,fstyle= 3,textxjust= 1,textyjust= 1
+	DrawText 176,32,"QANT"
+	SetDrawEnv fsize= 14,fstyle= 1,textxjust= 1,textyjust= 1
+	DrawText 181,60,"(Q)uick (A)ussietron (N)EXAFS (T)ool"
+	DrawText 222,40,"v1.12"
+	SetDrawEnv textxjust= 1,textyjust= 1
+	DrawText 183,101,"\\JCDeveloped by Eliot Gann (eliot.gann@nist.gov)\rPreviously at Australian Synchrotron\rCurrently National Institute of Standards and Technology"
+	SetDrawEnv textxjust= 1,textyjust= 1
+	DrawText 175,151,"\\JCPlease cite us if you use QANT for \ryour scientific publication"
+	TitleBox title0,pos={13.00,176.00},size={344.00,136.00}
+	TitleBox title0,labelBack=(65535,65535,65535),font="Courier",frame=5
+	TitleBox title0,variable= root:NEXAFS:CitationText
+	//DrawText 14,308,"\\JCQuick AS NEXAFS Tool (QANT): \ra program for NEXAFS loading and analysis \rdeveloped at the Australian Synchrotron\nE Gann, CR McNeill, A Tadich,\r BCC Cowie, L Thomsen\rJournal of synchrotron radiation, 2016\r\rdoi.org/10.1107/S1600577515018688"
+	//SVAR citationtext = root:NEXAFS:CitationText
+
+EndMacro
