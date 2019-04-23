@@ -3,7 +3,7 @@ Quick AS NEXAFS Tool
 developed by Eliot Gann of the Australian Synchrotron and currently NIST (eliot.gann@nist.gov)
 an Igor Pro set of procedures, best working on Igor Pro v 8+, but compatible with Igor Pro 6+
 
-For installation, if it suggested that you follow these instructions:
+For installation, it is suggested that you follow these instructions:
 
 Install Github Desktop, create a github account if you haven't already
 
@@ -17,7 +17,7 @@ Install Github Desktop, create a github account if you haven't already
 
 5.) create a shortcut/alias of QANT.ipf and put it somewhere in user procedures along with elementlibrary.ipf .  
 
-Also download and install the latest version of Optical Constants Library (seperate github repository) for optical constants integration.
+Also download and install the latest version of Optical Constants Library (seperate github repository https://github.com/EliotGann/Optical-Constants-Database) for optical constants integration.
 
 If you install QANT in this way, to update to the latest version all you have to do is go into github desktop and fetch the latest master version which will always be updated here.  You can also make changes to QANT and github will let us merge them nicely!
 
