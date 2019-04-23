@@ -15,7 +15,7 @@ Install Github Desktop, create a github account if you haven't already
 
 4.) Download the atomic scattering factors from henke (http://henke.lbl.gov/optical_constants/asf.html)  and place the unzipped files in this directory, along with a copy of the "Atomic Weights.txt" file from github (note an alias/shortcut of this files does not work).
 
-5.) create a shortcut/alias of QANT.ipf and put it somewhere in user procedures along with elementlibrary.ipf .  
+5.) create a shortcut/alias of QANT.ipf and elementlibrary.ipf and place them somewhere in "user procedures".  
 
 Also download and install the latest version of Optical Constants Library (seperate github repository https://github.com/EliotGann/Optical-Constants-Database) for optical constants integration.
 
