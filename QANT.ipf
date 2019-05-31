@@ -10782,7 +10782,7 @@ function /s QANT_LoadNEXAFSfile_Dean(pathn) // Dean's XDAC
 
 	wave /T QANT_LUT
 	newdatafolder /O/S Scans
-	newdatafolder /O/S $cleanupname(scanname,1)
+	newdatafolder /O/S $cleanupname(scanname,0)
 
 	
 	
