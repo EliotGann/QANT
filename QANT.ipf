@@ -919,8 +919,6 @@ function QANT_Loaderfunc()
 	DrawText 13,407,"Scan Notes:"
 	DrawText 322,618,"Fit Name (blank for auto):"
 	DrawText 13,431,"Scan Name:"
-	DrawText 214,456,"Other:"
-	DrawText 215,432,"Angle:"
 	SetDrawEnv fsize= 10
 	DrawText 493,215,"Secondary Normalization Reference"
 	DrawText 490,293,"Dark values to use for selection:"
@@ -1023,11 +1021,15 @@ function QANT_Loaderfunc()
 	Button QANT_but_EditPeakSet,pos={526,484},size={52,35},disable=2,proc=QANT_EditPeaksetWindowOpen,title="Edit",font="Arial",fSize=10
 	SetVariable QANT_strval_SampleName,pos={82,417},size={125,16},bodyWidth=125,disable=1,proc=QANT_NameSet
 	SetVariable QANT_strval_SampleName,value= _STR:"",live= 1,font="Arial",fSize=10
-	SetVariable QANT_strval_scanAngle,pos={254,411},size={41,16},bodyWidth=41,disable=1,proc=QANT_AngSet
+	
+	DrawText 215,441,"Other:"
+	DrawText 215,426,"Angle:"
+	DrawText 207,458,"X offset:"
+	SetVariable QANT_strval_scanAngle,pos={254,411},size={45,16},bodyWidth=48,disable=1,proc=QANT_AngSet
 	SetVariable QANT_strval_scanAngle,value= _STR:"",live= 1,font="Arial",fSize=10
-	SetVariable QANT_strval_scanOther,pos={254,426},size={41,16},bodyWidth=41,disable=1,proc=QANT_OtherSet
+	SetVariable QANT_strval_scanOther,pos={254,426},size={45,16},bodyWidth=48,disable=1,proc=QANT_OtherSet
 	SetVariable QANT_strval_scanOther,value= _STR:"",live= 1,font="Arial",fSize=10
-	SetVariable QANT_strval_scanEnOffset,pos={254,444},size={41,16},bodyWidth=41,disable=1,proc=QANT_EnOffsetSet
+	SetVariable QANT_strval_scanEnOffset,pos={254,444},size={45,16},bodyWidth=48,disable=1,proc=QANT_EnOffsetSet
 	SetVariable QANT_strval_scanEnOffset,value= _STR:"",live= 1,font="Arial",fSize=10,limits={-inf,inf,0.01}
 	SetVariable QANT_strval_SampleSet,pos={82,440},size={122,16},bodyWidth=122,disable=1,proc=QANT_SampleSetSet
 	SetVariable QANT_strval_SampleSet,value= _STR:"",live= 1,font="Arial",fSize=10
@@ -9927,7 +9929,9 @@ Function QANT_AngSet(sva) : SetVariableControl
 			endfor
 			setdatafolder foldersave
 			QANT_listNEXAFSscans()
-			listbox QANT_listbox_loadedfiles activate
+//			listbox QANT_listbox_loadedfiles activate
+			setvariable QANT_strval_scanAngle activate
+			
 			break
 		case -1: // control being killed
 			break
@@ -9984,7 +9988,8 @@ Function QANT_OtherSet(sva) : SetVariableControl
 			endfor
 			setdatafolder foldersave
 			QANT_listNEXAFSscans()
-			listbox QANT_listbox_loadedfiles activate
+//			listbox QANT_listbox_loadedfiles activate
+			setvariable QANT_strval_ScanOther activate
 			break
 		case -1: // control being killed
 			break
