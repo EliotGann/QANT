@@ -2,7 +2,7 @@
 
 #include "elementlibrary"
 #include <Multi-peak fitting 2.0>
-Menu "QANT v1.12"
+Menu "QANT"
 	"Advanced Options", /Q, Execute/P/Q "Init_QANT_AdvPanel()"
 	help={"Advanced NEXAFS Analysis options"}
 	"about", /Q, Execute/P/Q "QANT_About_QANT()"
@@ -207,6 +207,10 @@ function QANT_listNEXAFSscans()
 		if(!svar_exists(Otherstr))
 			string /g Otherstr = ""
 		endif
+		svar EnOffsetstr
+		if(!svar_exists(EnOffsetstr))
+			string /g EnOffsetstr = ""
+		endif
 		svar SampleSet
 		if(!svar_exists(SampleSet))
 			string /g SampleSet = ""
@@ -257,7 +261,7 @@ function QANT_listNEXAFSscans()
 
 		scanlist[j][8] = acqtime
 		scanlist[j][9] = filename
-		scanlist[j][10] = enoffset
+		scanlist[j][10] = enoffsetstr
 		newloadedfilelist += "filename="+filename+","
 		newloadedfilelist += "Created Date="+cdate+","
 		newloadedfilelist += "Modified Date="+mdate+","
@@ -396,7 +400,7 @@ function /s QANT_parsematchstr(stringin)
 	// format of outstr is going to be 6 element list {0 scannum search terms;1 name search terms; 2 set search terms; 3 notes search terms ; 4 angle search terms ; 5 other search terms} 
 	// each element can be itself a comma seperated list of terms.  Each comma seperated term is a complete search term.  ie ";;a n2200 sample,f;;;"  will search for a name that contains both "a n2200 sample" and "f" exactly.
 	// a general search term should be put in every one of the 6 elements
-	string scannumstr="", namestr="", setstr="", notesstr="", anglestr="", otherstr=""
+	string scannumstr="", namestr="", setstr="", notesstr="", anglestr="", otherstr="", EnOffsetstr=""
 	do
 		do
 			if(!cmpstr(m[0]," "))
@@ -640,7 +644,7 @@ function QANT_Loaderfunc()
 	dowindow /k QANTLoaderPanel
 	dowindow /k QANT_plot
 	//killdatafolder /Z NEXAFS
-	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.12 (Quick AS NEXAFS Tool)"
+	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.13 (Quick AS NEXAFS Tool)"
 	ModifyPanel /w=QANTLoaderPanel fixedSize=1
 	debuggeroptions debugOnError=0
 	newdatafolder /o/s NEXAFS
@@ -1019,10 +1023,12 @@ function QANT_Loaderfunc()
 	Button QANT_but_EditPeakSet,pos={526,484},size={52,35},disable=2,proc=QANT_EditPeaksetWindowOpen,title="Edit",font="Arial",fSize=10
 	SetVariable QANT_strval_SampleName,pos={82,417},size={125,16},bodyWidth=125,disable=1,proc=QANT_NameSet
 	SetVariable QANT_strval_SampleName,value= _STR:"",live= 1,font="Arial",fSize=10
-	SetVariable QANT_strval_scanAngle,pos={254,417},size={41,16},bodyWidth=41,disable=1,proc=QANT_AngSet
+	SetVariable QANT_strval_scanAngle,pos={254,411},size={41,16},bodyWidth=41,disable=1,proc=QANT_AngSet
 	SetVariable QANT_strval_scanAngle,value= _STR:"",live= 1,font="Arial",fSize=10
-	SetVariable QANT_strval_scanOther,pos={254,441},size={41,16},bodyWidth=41,disable=1,proc=QANT_OtherSet
+	SetVariable QANT_strval_scanOther,pos={254,426},size={41,16},bodyWidth=41,disable=1,proc=QANT_OtherSet
 	SetVariable QANT_strval_scanOther,value= _STR:"",live= 1,font="Arial",fSize=10
+	SetVariable QANT_strval_scanEnOffset,pos={254,444},size={41,16},bodyWidth=41,disable=1,proc=QANT_EnOffsetSet
+	SetVariable QANT_strval_scanEnOffset,value= _STR:"",live= 1,font="Arial",fSize=10,limits={-inf,inf,0.01}
 	SetVariable QANT_strval_SampleSet,pos={82,440},size={122,16},bodyWidth=122,disable=1,proc=QANT_SampleSetSet
 	SetVariable QANT_strval_SampleSet,value= _STR:"",live= 1,font="Arial",fSize=10
 	SetVariable QANT_strval_notes,pos={82,392},size={783,16},bodyWidth=783,disable=1,proc=QANT_notesSet
@@ -1461,13 +1467,15 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 				setvariable QANT_strval_ScanAngle activate
 			elseif(colselected==3)
 				setvariable QANT_strval_ScanOther activate
+			elseif(colselected==10)
+				setvariable QANT_strval_ScanEnoffset activate
 			elseif(colselected==4)
 				setvariable QANT_strval_SampleSet activate
 			elseif(colselected==5)
 				setvariable QANT_strval_Notes activate
-			elseif(colselected==10)
+			//elseif(colselected==10)
 				// change the energy offset of selection
-				QANT_ChangeEnergySel()
+				//QANT_ChangeEnergySel()
 			endif
 			//break
 		case 1: // mouse down
@@ -1499,6 +1507,8 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 					setvariable QANT_strval_ScanAngle activate
 				elseif(colselected==3)
 					setvariable QANT_strval_ScanOther activate
+				elseif(colselected==11)
+					setvariable QANT_strval_ScanEnoffset activate
 				elseif(colselected==4)
 					setvariable QANT_strval_SampleSet activate
 				elseif(colselected==5)
@@ -1599,6 +1609,17 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 				else // it is empty, so leave the box empty
 					setvariable QANT_strval_scanOther win=QANTLoaderPanel,value=_STR:"", disable=0,title=""
 				endif
+				string /g EnOffsetStr
+				numericalvalue = str2num(EnOffsetStr)
+				if(strlen(EnOffsetStr)>0)
+					if(numericalvalue*0==0 && strlen(num2str(numericalvalue))>=strlen(EnOffsetStr)) // EnOffset string is really a number
+						setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_NUM:str2num(EnOffsetStr), disable=0,title="",limits={-inf,inf,0.01}
+					else // treat it as a string
+						setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_STR:EnOffsetStr, disable=0,title=""
+					endif
+				else // it is empty, so leave the box empty
+					setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_STR:"", disable=0,title=""
+				endif
 				svar darkscan, refscan
 				if(svar_exists(darkscan))
 					list = QANT_darklist()
@@ -1629,6 +1650,7 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 				setvariable QANT_strval_notes win=QANTLoaderPanel,value=_STR:"",disable=1,title=""
 				setvariable QANT_strval_scanAngle win=QANTLoaderPanel,value=_STR:"",disable=1,title=""
 				setvariable QANT_strval_scanOther win=QANTLoaderPanel,value=_STR:"",disable=1,title=""
+				setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_STR:"",disable=1,title=""
 				setvariable QANT_strval_SampleSet win=QANTLoaderPanel,value=_STR:"", disable=1,title=""
 				setvariable QANT_strval_SampleName win=QANTLoaderPanel,value=_STR:"", disable=1,title=""
 			else
@@ -1681,6 +1703,17 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 				else // it is empty, so leave the box empty
 					setvariable QANT_strval_scanOther win=QANTLoaderPanel,value=_STR:"", disable=0,title=""
 				endif
+				svar EnOffsetStr
+				numericalvalue = str2num(EnOffsetStr)
+				if(strlen(EnOffsetStr)>0)
+					if(numericalvalue*0==0 && strlen(num2str(numericalvalue))>=strlen(EnOffsetStr)) // other string is really a number
+						setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_NUM:str2num(EnOffsetStr), disable=0,title="",limits={-inf,inf,0.01}
+					else // treat it as a string
+						setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_STR:EnOffsetStr, disable=0,title=""
+					endif
+				else // it is empty, so leave the box empty
+					setvariable QANT_strval_scanEnOffset win=QANTLoaderPanel,value=_STR:"", disable=0,title=""
+				endif
 				svar darkscan, refscan
 				if(svar_exists(darkscan))
 					list = QANT_darklist()
@@ -1710,6 +1743,14 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 			break
 		case 7: // finish edit
 			
+			break
+		case 8: // mousescroll
+			if(col==10)
+				variable enoffset = str2num(listwave[row][col])
+				print enoffset
+			else
+				break
+			endif
 			break
 		case 13: // checkbox clicked (Igor 6.2 or later)
 			break
@@ -3155,7 +3196,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 						endif
 							lastplotted = (title+"_"+channels[k])
 					else
-						wave datawave = root:NEXAFS:Scans:$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
+						wave datawave = root:NEXAFS:Scans:$(scanlist[j][0]):$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
 						if(waveexists(datawave))
 							if(!nochangeofplot)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k]) vs xwave
@@ -5173,7 +5214,7 @@ function QANT_ExportData(whichdata)
 			listofwaves = removefromlist(x_axis,listofwaves)
 			listofwaves = x_axis +";"+ listofwaves // put xaxis first
 		endif
-		header = "File Produced by QANTv1.12 by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
+		header = "File Produced by QANTv1.13 by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
 		header += "----------------------------------------------------\rList of dataseries and their notes:\r\r" 
 		for(j=0;j<itemsinlist(listofwaves);j+=1)
 			header += stringfromlist(j,listofwaves)+"\r"
@@ -8651,6 +8692,10 @@ function /s QANT_LoadNEXAFSfile(pathn) // MDA
 	if(strlen(otherstr)*0!=0)
 		otherstr = ""
 	endif
+	string /g EnOffsetstr
+	if(strlen(EnOffsetstr)*0!=0)
+		EnOffsetstr = ""
+	endif
 	string /g SampleName
 	if(strlen(SampleName)*0!=0)
 		SampleName = ""
@@ -9131,6 +9176,10 @@ function /s QANT_LoadNEXAFSfile_AUFast(pathn) // MDA
 	if(strlen(otherstr)*0!=0)
 		otherstr = ""
 	endif
+	string /g EnOffsetstr
+	if(strlen(EnOffsetstr)*0!=0)
+		EnOffsetstr = ""
+	endif
 	string /g SampleName
 	if(strlen(SampleName)*0!=0)
 		SampleName = ""
@@ -9321,6 +9370,10 @@ function /s QANT_LoadNEXAFSfile_SimpleCSV(pathn) // MDA
 	string /g otherstr
 	if(strlen(otherstr)*0!=0)
 		otherstr = ""
+	endif
+	string /g EnOffsetstr
+	if(strlen(EnOffsetstr)*0!=0)
+		EnOffsetstr = ""
 	endif
 	string /g SampleName
 	if(strlen(SampleName)*0!=0)
@@ -9907,7 +9960,6 @@ Function QANT_OtherSet(sva) : SetVariableControl
 			else
 				cleanedstring = sval
 				setvariable QANT_strval_ScanOther win=QANTLoaderPanel,value=_STR:cleanedstring
-				
 			endif
 			// popup warning if multiple scans are selected
 			if(sum(selwavescanlist)>1)
@@ -9933,6 +9985,63 @@ Function QANT_OtherSet(sva) : SetVariableControl
 			setdatafolder foldersave
 			QANT_listNEXAFSscans()
 			listbox QANT_listbox_loadedfiles activate
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
+Function QANT_EnOffsetSet(sva) : SetVariableControl
+	STRUCT WMSetVariableAction &sva
+
+	switch( sva.eventCode )
+		case 1: // mouse up
+		case 2: // Enter key
+		case 3: // Live update
+			Variable dval = sva.dval,i
+			String sval = sva.sval
+			string foldersave = getdatafolder(1)
+			setdatafolder root:NEXAFS
+			wave selwave = root:NEXAFS:selwavescanlist
+			duplicate /free selwave, selwavescanlist
+			selwavescanlist =selwave? 1 : 0
+			wave /t scanlist
+			setdatafolder scans
+			variable numericalvalue = str2num(sval)
+			string cleanedstring
+			if(numericalvalue*0==0 && strlen(sval) <= strlen(num2str(numericalvalue)))
+				setvariable QANT_strval_ScanEnOffset win=QANTLoaderPanel,value=_NUM:numericalvalue,limits={-inf,inf,0.01}
+				cleanedstring = num2str(numericalvalue)
+			else
+				cleanedstring = sval
+				setvariable QANT_strval_ScanEnOffset win=QANTLoaderPanel,value=_STR:cleanedstring
+			endif
+			// popup warning if multiple scans are selected
+			if(sum(selwavescanlist)>1)
+				doalert /t="Warning" 1, "The changes you have made will apply to multiple scans! Continue?"
+				if(v_flag==2)
+					break
+				endif
+			endif
+			for(i=0;i<sum(selwavescanlist);i+=1)
+				if(i==0)
+					findvalue /v=1 /T=.1 /z selwavescanlist
+				else
+					findvalue /s=(v_value+1) /v=1 /T=.1 /z selwavescanlist
+				endif
+				setdatafolder $scanlist[v_value][0]
+				svar/z EnOffsetstr
+				if(!svar_exists(EnOffsetstr))
+					string/g EnOffsetstr
+				endif
+				EnOffsetstr = cleanedstring
+				setdatafolder ::
+			endfor
+			setdatafolder foldersave
+			QANT_listNEXAFSscans()
+//			listbox QANT_listbox_loadedfiles activate
+			setvariable QANT_strval_ScanEnoffset activate
 			break
 		case -1: // control being killed
 			break
@@ -10829,6 +10938,7 @@ function /s QANT_LoadNEXAFSfile_Dean(pathn) // Dean's XDAC
 	string /g notes = notes2add
 	string /g anglestr = angle
 	string /g otherstr = bias
+	string /g EnOffsetstr = ""
 	string /g SampleName = samp
 	string /g SampleSet
 	if(strlen(SampleSet)*0!=0)
@@ -11002,7 +11112,7 @@ Window QANT_About_QANT() : Panel
 	DrawText 176,32,"QANT"
 	SetDrawEnv fsize= 14,fstyle= 1,textxjust= 1,textyjust= 1
 	DrawText 181,60,"(Q)uick (A)ussietron (N)EXAFS (T)ool"
-	DrawText 222,40,"v1.12"
+	DrawText 222,40,"v1.13"
 	SetDrawEnv textxjust= 1,textyjust= 1
 	DrawText 183,101,"\\JCDeveloped by Eliot Gann (eliot.gann@nist.gov)\rPreviously at Australian Synchrotron\rCurrently National Institute of Standards and Technology"
 	SetDrawEnv textxjust= 1,textyjust= 1
@@ -11014,3 +11124,140 @@ Window QANT_About_QANT() : Panel
 	//SVAR citationtext = root:NEXAFS:CitationText
 
 EndMacro
+
+
+function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
+	string pathn
+	variable fileref
+	open/r/F="NEXAFS files (*.csv,):.csv;" fileref as pathn
+	string fullpath = s_filename
+	FStatus fileref
+	if(V_flag==0)
+		return ""
+	endif
+	string pname = "NEXAFSPath"
+	string scanname = ""
+	scanname = replacestring("-baseline.csv",s_filename,"")
+	scanname = replacestring("-primary.csv",scanname,"")
+	string basename = scanname
+	string foldersave = getdatafolder(1)
+	setdatafolder root:NEXAFS:
+	newdatafolder /O/S Scans
+	newdatafolder /O/S $cleanupname(scanname,1)
+
+	killwaves /Z/A
+	string /g filename = fullpath
+	getfilefolderinfo /p=NEXAFSPath /q/z filename+".csv"
+	string /g filesize
+	sprintf filesize, "%d" ,v_logEOF
+	string /g cdate
+	sprintf cdate, "%d" ,v_creationdate
+	string /g mdate
+	sprintf mdate, "%d" ,v_modificationdate
+	
+	
+	
+	string columnname,nametouse
+	variable columnnum=0
+	LoadWave/Q/O/J/D/A/K=0/P=$(pname)/W  basename+"-primary.csv"
+	wave /z datawave = $(stringfromlist(0,S_waveNames))
+	if(!waveexists(datawave))
+		setdatafolder currentfolder
+		return ""
+	endif
+	make /t /n=(itemsinlist(s_wavenames)) columns = stringfromlist(p,s_wavenames)
+	
+
+
+	string metadatafilename
+	string metadata=""
+
+	metadatafilename = basename+"-.jsonl"
+	metadata = QANT_addmetadatafromjson(pname,"institution",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"project_name",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"proposal_id",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"sample_name",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"sample_desc",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"sample_id",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"sample_set",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"user_name",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"user_id",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"notes",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"uid",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"dim1",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"dim2",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"dim3",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"chemical_formula",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"density",metadatafilename,metadata)
+	metadata = QANT_addmetadatafromjson(pname,"project_desc",metadatafilename,metadata)
+	//metadata = replacestring(":",metadata,"  -  ")
+	
+
+	string /g notes = stringbykey("notes", metadata)
+	string /g otherstr = stringbykey("dim1", metadata)
+	string /g EnOffsetstr = ""
+	string /g SampleName = stringbykey("sample_name", metadata)
+	string /g SampleSet = stringbykey("sample_set", metadata)
+	string /g refscan = "Default"
+	string /g darkscan = "Default"
+	string /g enoffset = "Default"
+	
+	LoadWave/Q/O/J/D/n=baseline/K=0/P=$(pname)/m  basename+"-baseline.csv"
+	wave /t baselines = $stringfromlist(0,S_waveNames)
+	matrixtranspose baselines
+	duplicate /o baselines, root:Packages:NikaNISTRSoXS:ExtraPVs
+	variable i
+	//concatenate
+	
+	findvalue /text="time" baselines
+	string /g acqtime = baselines[v_value][1]
+	findvalue /text="RSoXS Sample Rotation" baselines
+	string /g anglestr
+	if(strlen(anglestr)*0!=0)
+		anglestr = baselines[v_value][1]
+	endif
+	
+	
+	variable xloc=nan, yloc=nan, zloc=nan, r1loc=nan, r2loc=nan
+	
+	findvalue /text="RSoXS Sample Outboard-Inboard" baselines
+	if(v_value >=0)
+		xloc=str2num(baselines[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Up-Down" baselines
+	if(v_value >=0)
+		yloc=str2num(baselines[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Downstream-Upstream" baselines
+	if(v_value >=0)
+		zloc=str2num(baselines[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Rotation" baselines
+	if(v_value >=0)
+		R1loc=str2num(baselines[v_value][2])
+		anglestr = num2str(str2num(baselines[v_value][2]))
+	endif
+	
+	if(xloc*yloc*zloc*r1loc*0==0)
+		notes += "( X="+num2str(xloc)+", Y="+num2str(yloc)+", Z="+num2str(zloc)+", R1="+num2str(r1loc)+")"
+	endif
+	
+	duplicate baselines, extrainfo, extraPVs
+	
+	setdatafolder foldersave
+	print "Loaded NEXAFS file : " + cleanupname(scanname,1)
+	return 	cleanupname(scanname,1)
+end
+function /s QANT_NEXAFSfileEXt_bluesky() // Bluesky
+	return ".csv"
+end
+
+
+function /s QANT_addmetadatafromjson(path, key, filename, metadatalist)
+	string path, key, filename, metadatalist
+	string kvalue
+	grep /LIST/q/e="\"" + key+ "\": \"([^\"]*)\""/P=$(path) filename
+	splitstring /e="\"" + key+ "\": \"([^\"]*)\"" s_value, kvalue
+	metadatalist = addlistitem(key+":"+kvalue,metadatalist)
+	return metadatalist
+end
