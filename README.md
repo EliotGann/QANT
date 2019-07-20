@@ -9,7 +9,7 @@ Install Github Desktop, create a github account if you haven't already
 
 1.) Clone this repository to your local computer (doesn't matter where you store it, the default location is probaby fine)
 
-2.) Create a shortcut (windows) or alias (mac) of the AUNEXAFS.ipf file and put it in the "Igor Procedures" folder (within Igor, go to  Help -> Igor Pro User Files)
+2.) Create a shortcut (windows) or alias (mac) of the QANTboot.ipf file and put it in the "Igor Procedures" folder (within Igor, go to  Help -> Igor Pro User Files)
 
 3.) within the "user procedures" (within Igor, go to  Help -> Igor Pro User Files) folder create a folder called "Atomic Scattering Factors".
 
