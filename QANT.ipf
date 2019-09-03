@@ -7295,6 +7295,7 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 	for(i=0;i<dimsize(enoffscannames,0);i+=1)
 		setdatafolder root:NEXAFS:Scans:
 		setdatafolder enoffscannames(i)
+		string /g enoffsetstr = num2str(energyoffsets[i])
 		string /g enoffset = num2str(energyoffsets[i])
 	endfor
 	setdatafolder foldersave
