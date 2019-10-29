@@ -3201,7 +3201,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 						wave datawave = root:NEXAFS:Scans:$(scanlist[j][0]):$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
 						if(waveexists(datawave))
 							if(!nochangeofplot)
-								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k]) vs xwave
+								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) datawave /TN=$(title +"_"+channels[k]) vs xwave
 								modifygraph /w=QANT_plot lStyle($(title+"_"+channels[k]))=stylesperchan[channum]
 								modifygraph /w=QANT_plot lSize($(title+"_"+channels[k]))=1, lsize = thickness
 								channum+=1
@@ -11164,10 +11164,18 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	
 	string columnname,nametouse
 	variable columnnum=0
-	LoadWave/Q/O/J/D/A/K=0/P=$(pname)/W  basename+"-primary.csv"
+	getfileFolderInfo /z /P=$(pname) /q  basename+"-primary.csv"
+	if(v_flag==0)
+		LoadWave/Q/O/J/D/A/K=0/P=$(pname)/W  basename+"-primary.csv"
+	else
+		setdatafolder foldersave
+		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
+		return ""
+	endif
 	wave /z datawave = $(stringfromlist(0,S_waveNames))
 	if(!waveexists(datawave))
-		setdatafolder currentfolder
+		setdatafolder foldersave
+		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
 		return ""
 	endif
 	make /t /n=(itemsinlist(s_wavenames)) columns = stringfromlist(p,s_wavenames)
@@ -11198,10 +11206,10 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	//metadata = replacestring(":",metadata,"  -  ")
 	
 
-	string /g notes = stringbykey("notes", metadata)
+	string /g notes = stringbykey("notes", metadata) + stringbykey("sample_name", metadata)
 	string /g otherstr = stringbykey("dim1", metadata)
 	string /g EnOffsetstr = ""
-	string /g SampleName = stringbykey("sample_name", metadata)
+	string /g SampleName = cleanupname(basename,0)
 	string /g SampleSet = stringbykey("sample_set", metadata)
 	string /g refscan = "Default"
 	string /g darkscan = "Default"
@@ -11210,6 +11218,8 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	LoadWave/Q/O/J/D/n=baseline/K=0/P=$(pname)/m  basename+"-baseline.csv"
 	wave /t baselines = $stringfromlist(0,S_waveNames)
 	matrixtranspose baselines
+	newdatafolder/o root:Packages
+	newdatafolder/o root:Packages:NikaNISTRSoXS
 	duplicate /o baselines, root:Packages:NikaNISTRSoXS:ExtraPVs
 	variable i
 	//concatenate
