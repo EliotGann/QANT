@@ -1106,7 +1106,7 @@ function /S QANT_channellistxaxis()
 		x_axis = "EncoderPhotonEnergy"
 		if(findlistitem(x_axis,basiclist) == -1)
 			string energylikeobject
-			splitstring /e=";([^;]*[E|e]n[^;]*);" basiclist, energylikeobject
+			splitstring /e=";([^;]*[E|e]nergy?[^;]*);" basiclist, energylikeobject
 			if(strlen(energylikeobject)>1)
 				x_axis = energylikeobject
 				PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=12,fstyle=0,fColor=(0,0,0)
@@ -1451,14 +1451,18 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 	variable /g root:NEXAFS:busy
 	nvar busy = root:NEXAFS:busy
 	if(busy)
-		return 0
+		if(ticks - busy > 300)
+			busy = 0
+		else
+			return 0
+		endif
 	endif
 	switch( lba.eventCode )
 		case -1: // control being killed
 			break
 		case 3: // double click
 		// moved this from the end of case 5
-			busy=1
+			busy=ticks
 			variable /g colselected = col
 			if(row>dimsize(listwave,0) || row <0)
 				break
@@ -1481,7 +1485,7 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 			endif
 			//break
 		case 1: // mouse down
-			busy=1
+			busy=ticks
 			if(!(row>=0) || row >dimsize(listwave,0))
 				string sortfoldersave = getdatafolder(1)
 				setdatafolder root:NEXAFS:
@@ -1523,7 +1527,7 @@ Function QANT_ScanListbox(lba) : ListBoxControl
 			//break
 		case 4: // cell selection
 		case 5: // cell selection plus shift key
-			busy=1
+			busy=ticks
 			svar x_axis = root:NEXAFS:x_axis
 			variable modenum = max(whichlistitem(x_axis,QANT_channellistxaxis())+1,1)
 			PopupMenu QANT_popup_X_xais win=QANTLoaderPanel,mode=modenum,popvalue=x_axis
@@ -2247,7 +2251,8 @@ function QANT_CalcNormalizations(scanstocalc)
 			wave/t channels = $("root:Nexafs:Scans:"+possiblyquotename(scanlist[j][0])+ ":Columnnames")
 			for(k=0;k<dimsize(channels,0);k+=1)
 				wave datawave = $("root:Nexafs:Scans:"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
-				if(waveexists(datawave))
+				wave chanwave = $Channels[k]
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2)
 					nvar darkvalue = $(darkdirectory+possiblyquotename(channels[k]+"_mean"))
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
@@ -2339,8 +2344,9 @@ function QANT_CalcNormalizations(scanstocalc)
 			if(cmpstr(channels[k],x_axis)==0)
 				continue // if the channel is the normalization channel or the x axis then it's already taken care of, so don't do anything
 			endif
-			wave datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
-			if(waveexists(datawave))
+			wave /z datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
+			wave chanwave = $channels[k]
+			if(waveexists(datawave) && wavetype(chanwave,1)!=2)
 				duplicate/o datawave, $Channels[k]
 			endif
 		endfor
@@ -2463,7 +2469,8 @@ function QANT_CalcNormalizations(scanstocalc)
 					continue // if the channel is the normalization channel or the x axis then it's already taken care of, so don't do anything
 				endif
 				wave datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
-				if(waveexists(datawave))
+				wave chanwave = $Channels[k]
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2)
 					duplicate/o datawave, $Channels[k]
 					
 					wave newdatawave = $Channels[k]
@@ -2546,7 +2553,8 @@ function QANT_CalcNormalizations(scanstocalc)
 				endif
 				wave datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
 				wavestats /q/z datawave
-				if(waveexists(datawave) &&v_npnts>10)
+				wave chanwave = $Channels[k]
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2 &&v_npnts>10)
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
 					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*"))
@@ -3185,7 +3193,8 @@ function QANT_replotdata([nochangeofplot,ontop])
 				endif
 				title = cleanupname(title,1)
 				if(channelsel[k])
-					if(waveexists(datawave))
+					wave chanwave = $Channels[k]
+					if(waveexists(datawave) && wavetype(chanwave,1)==1)
 						if(!nochangeofplot)
 							if(dispstitched)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k])
@@ -3199,7 +3208,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 							lastplotted = (title+"_"+channels[k])
 					else
 						wave datawave = root:NEXAFS:Scans:$(scanlist[j][0]):$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
-						if(waveexists(datawave))
+						if(waveexists(datawave) && wavetype(chanwave,1)==1)
 							if(!nochangeofplot)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) datawave /TN=$(title +"_"+channels[k]) vs xwave
 								modifygraph /w=QANT_plot lStyle($(title+"_"+channels[k]))=stylesperchan[channum]
@@ -3241,7 +3250,8 @@ function QANT_replotdata([nochangeofplot,ontop])
 					endif
 					title = cleanupname(title,1)
 					if(channelsel[k])
-						if(waveexists(datawave))
+						wave chanwave = $Channels[k]
+						if(waveexists(datawave) && wavetype(chanwave,1)==1)
 							if(dispstitched)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k])
 							else
@@ -3254,7 +3264,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 							lastplotted = (title+"_"+channels[k])
 						else
 							wave datawave = root:NEXAFS:Scans:$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
-							if(waveexists(datawave))
+							if(waveexists(datawave) && wavetype(chanwave,1)==1)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k]) vs xwave
 								modifygraph /w=QANT_plot lStyle($(title+"_"+channels[k]))=stylesperchan[channum]
 								modifygraph /w=QANT_plot lSize($(title+"_"+channels[k]))=1, lsize = thickness
@@ -11167,7 +11177,7 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	variable columnnum=0
 	getfileFolderInfo /z /P=$(pname) /q  basename+"-primary.csv"
 	if(v_flag==0)
-		LoadWave/Q/O/J/D/A/K=0/P=$(pname)/W  basename+"-primary.csv"
+		LoadWave/Q/O/J/D/A/K=1/P=$(pname)/W  basename+"-primary.csv"
 	else
 		setdatafolder foldersave
 		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
@@ -11180,8 +11190,6 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 		return ""
 	endif
 	make /t /n=(itemsinlist(s_wavenames)) columnnames = stringfromlist(p,s_wavenames)
-	
-
 
 	string metadatafilename
 	string metadata=""
