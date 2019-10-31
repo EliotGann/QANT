@@ -11179,7 +11179,7 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
 		return ""
 	endif
-	make /t /n=(itemsinlist(s_wavenames)) columns = stringfromlist(p,s_wavenames)
+	make /t /n=(itemsinlist(s_wavenames)) columnnames = stringfromlist(p,s_wavenames)
 	
 
 
@@ -11260,6 +11260,21 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	
 	duplicate baselines, extrainfo, extraPVs
 	
+
+	
+	wave /z datawave = $(columnnames[0])
+	if(!waveexists(datawave))
+		setdatafolder root:NEXAFS:scans
+		killdatafolder /z cleanupname(scanname,1)
+		setdatafolder foldersave
+		return ""
+	endif
+	if(numpnts(datawave) <5)
+		setdatafolder root:NEXAFS:scans
+		killdatafolder /z cleanupname(scanname,1)
+		setdatafolder foldersave
+		return ""
+	endif
 	setdatafolder foldersave
 	print "Loaded NEXAFS file : " + cleanupname(scanname,1)
 	return 	cleanupname(scanname,1)
