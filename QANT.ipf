@@ -1768,7 +1768,7 @@ End
 
 Function QANT_popNorm(pa) : PopupMenuControl
 	STRUCT WMPopupAction &pa
-
+	pa.BlockReentry = 1
 	switch( pa.eventCode )
 		case 2: // mouse up
 			Variable popNum = pa.popNum
@@ -2252,7 +2252,7 @@ function QANT_CalcNormalizations(scanstocalc)
 			for(k=0;k<dimsize(channels,0);k+=1)
 				wave datawave = $("root:Nexafs:Scans:"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
 				wave chanwave = $Channels[k]
-				if(waveexists(datawave) && wavetype(chanwave,1)!=2)
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 )
 					nvar darkvalue = $(darkdirectory+possiblyquotename(channels[k]+"_mean"))
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
@@ -2346,7 +2346,7 @@ function QANT_CalcNormalizations(scanstocalc)
 			endif
 			wave /z datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
 			wave chanwave = $channels[k]
-			if(waveexists(datawave) && wavetype(chanwave,1)!=2)
+			if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 )
 				duplicate/o datawave, $Channels[k]
 			endif
 		endfor
@@ -2470,7 +2470,7 @@ function QANT_CalcNormalizations(scanstocalc)
 				endif
 				wave datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
 				wave chanwave = $Channels[k]
-				if(waveexists(datawave) && wavetype(chanwave,1)!=2)
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1)
 					duplicate/o datawave, $Channels[k]
 					
 					wave newdatawave = $Channels[k]
@@ -2487,7 +2487,7 @@ function QANT_CalcNormalizations(scanstocalc)
 						
 						Note newdatawave, wnote+"\nReference divided : " + normchan + ";"
 						replotdata=1
-						if(stringmatch(Channels[k],"*_phd_*"))
+						if(stringmatch(Channels[k],"*_phd_*") || stringmatch(Channels[k],"*beamstop*") || stringmatch(Channels[k],"*diode*"))
 							newdatawave = -ln(newdatawave) // it it's a diode, we are doing transmission, which we change here to optical density
 						elseif(stringmatch(Channels[k],"*mcp*"))
 							newdatawave = newdatawave // not sure what to do with the mcp data yet - self absorption needs to be taken into account
@@ -2554,7 +2554,7 @@ function QANT_CalcNormalizations(scanstocalc)
 				wave datawave = $(datafolder+":"+possiblyquotename(scanlist[j][0])+":"+possiblyquotename(channels[k]))
 				wavestats /q/z datawave
 				wave chanwave = $Channels[k]
-				if(waveexists(datawave) && wavetype(chanwave,1)!=2 &&v_npnts>10)
+				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 &&v_npnts>10)
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
 					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*"))
@@ -3194,7 +3194,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 				title = cleanupname(title,1)
 				if(channelsel[k])
 					wave chanwave = $Channels[k]
-					if(waveexists(datawave) && wavetype(chanwave,1)==1)
+					if(waveexists(datawave) && wavetype(chanwave,1)==1 && wavetype(datawave,1)==1 )
 						if(!nochangeofplot)
 							if(dispstitched)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k])
@@ -3208,7 +3208,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 							lastplotted = (title+"_"+channels[k])
 					else
 						wave datawave = root:NEXAFS:Scans:$(scanlist[j][0]):$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
-						if(waveexists(datawave) && wavetype(chanwave,1)==1)
+						if(waveexists(datawave) && wavetype(chanwave,1)==1 && wavetype(datawave,1)==1 )
 							if(!nochangeofplot)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) datawave /TN=$(title +"_"+channels[k]) vs xwave
 								modifygraph /w=QANT_plot lStyle($(title+"_"+channels[k]))=stylesperchan[channum]
@@ -3251,7 +3251,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 					title = cleanupname(title,1)
 					if(channelsel[k])
 						wave chanwave = $Channels[k]
-						if(waveexists(datawave) && wavetype(chanwave,1)==1)
+						if(waveexists(datawave) && wavetype(chanwave,1)==1 && wavetype(datawave,1)==1 )
 							if(dispstitched)
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k])
 							else
@@ -3264,7 +3264,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 							lastplotted = (title+"_"+channels[k])
 						else
 							wave datawave = root:NEXAFS:Scans:$channels[k] // channel may not have been corrected (ie HOPG or Ring current)
-							if(waveexists(datawave) && wavetype(chanwave,1)==1)
+							if(waveexists(datawave) && wavetype(chanwave,1)==1 && wavetype(datawave,1)==1 )
 								appendtograph /w=QANT_plot /c=(colorsperscan[scannum][0],colorsperscan[scannum][1],colorsperscan[scannum][2]) $channels[k] /TN=$(title +"_"+channels[k]) vs xwave
 								modifygraph /w=QANT_plot lStyle($(title+"_"+channels[k]))=stylesperchan[channum]
 								modifygraph /w=QANT_plot lSize($(title+"_"+channels[k]))=1, lsize = thickness
