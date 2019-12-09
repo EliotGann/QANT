@@ -11153,9 +11153,9 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	endif
 	string pname = "NEXAFSPath"
 	string scanname = ""
-	scanname = replacestring("-baseline.csv",s_filename,"")
-	scanname = replacestring("-primary.csv",scanname,"")
-	string basename = scanname
+	scanname = replacestring("-primary.csv",s_filename,"")
+	string basename, basenum
+	splitstring /e="^([[:digit:]]*)-(.*)" scanname, basenum, basename
 	string foldersave = getdatafolder(1)
 	setdatafolder root:NEXAFS:
 	newdatafolder /O/S Scans
@@ -11163,7 +11163,7 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 
 	killwaves /Z/A
 	string /g filename = fullpath
-	getfilefolderinfo /p=NEXAFSPath /q/z filename+".csv"
+	getfilefolderinfo /p=NEXAFSPath /q/z filename//+".csv"
 	string /g filesize
 	sprintf filesize, "%d" ,v_logEOF
 	string /g cdate
@@ -11171,49 +11171,9 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	string /g mdate
 	sprintf mdate, "%d" ,v_modificationdate
 	
-	
-	
-	string columnname,nametouse
-	variable columnnum=0
-	getfileFolderInfo /z /P=$(pname) /q  basename+"-primary.csv"
-	if(v_flag==0)
-		LoadWave/Q/O/J/D/A/K=1/P=$(pname)/W  basename+"-primary.csv"
-	else
-		setdatafolder foldersave
-		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
-		return ""
-	endif
-	wave /z datawave = $(stringfromlist(0,S_waveNames))
-	if(!waveexists(datawave))
-		setdatafolder foldersave
-		killdatafolder /z root:NEXAFS:Scans:$cleanupname(scanname,1)
-		return ""
-	endif
-	make /t /n=(itemsinlist(s_wavenames)) columnnames = stringfromlist(p,s_wavenames)
-
-	string metadatafilename
-	string metadata=""
-
-	metadatafilename = basename+"-.jsonl"
-	metadata = QANT_addmetadatafromjson(pname,"institution",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"project_name",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"proposal_id",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"sample_name",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"sample_desc",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"sample_id",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"sample_set",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"user_name",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"user_id",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"notes",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"uid",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"dim1",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"dim2",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"dim3",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"chemical_formula",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"density",metadatafilename,metadata)
-	metadata = QANT_addmetadatafromjson(pname,"project_desc",metadatafilename,metadata)
-	//metadata = replacestring(":",metadata,"  -  ")
-	
+	string pathtodata = parseFilePath(1,fullpath,":",1,0)
+	load_bluesky_RSoXS(scanname,pathtodata,pname)
+	svar metadata
 
 	string /g notes = stringbykey("notes", metadata) + stringbykey("sample_name", metadata)
 	string /g otherstr = stringbykey("dim1", metadata)
@@ -11224,52 +11184,50 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 	string /g darkscan = "Default"
 	string /g enoffset = "Default"
 	
-	LoadWave/Q/O/J/D/n=baseline/K=0/P=$(pname)/m  basename+"-baseline.csv"
-	wave /t baselines = $stringfromlist(0,S_waveNames)
-	matrixtranspose baselines
-	newdatafolder/o root:Packages
-	newdatafolder/o root:Packages:NikaNISTRSoXS
-	duplicate /o baselines, root:Packages:NikaNISTRSoXS:ExtraPVs
-	variable i
-	//concatenate
+	wave /z timew
+	if(waveexists(timew))
+		string /g acqtime = num2str(timew[0]) 
+	else
+		string /g acqtime = cdate
+	endif
+	wave /t ExtraPVs
 	
-	findvalue /text="time" baselines
-	string /g acqtime = baselines[v_value][1]
-	findvalue /text="RSoXS Sample Rotation" baselines
+	findvalue /text="time" ExtraPvs
+	string /g acqtime = ExtraPVs[v_value][1]
+	findvalue /text="RSoXS Sample Rotation" ExtraPVs
 	string /g anglestr
 	if(strlen(anglestr)*0!=0)
-		anglestr = baselines[v_value][1]
+		anglestr = ExtraPVs[v_value][1]
 	endif
 	
 	
 	variable xloc=nan, yloc=nan, zloc=nan, r1loc=nan, r2loc=nan
 	
-	findvalue /text="RSoXS Sample Outboard-Inboard" baselines
+	findvalue /text="RSoXS Sample Outboard-Inboard" ExtraPVs
 	if(v_value >=0)
-		xloc=str2num(baselines[v_value][2])
+		xloc=str2num(ExtraPVs[v_value][2])
 	endif
-	findvalue /text="RSoXS Sample Up-Down" baselines
+	findvalue /text="RSoXS Sample Up-Down" ExtraPVs
 	if(v_value >=0)
-		yloc=str2num(baselines[v_value][2])
+		yloc=str2num(ExtraPVs[v_value][2])
 	endif
-	findvalue /text="RSoXS Sample Downstream-Upstream" baselines
+	findvalue /text="RSoXS Sample Downstream-Upstream" ExtraPVs
 	if(v_value >=0)
-		zloc=str2num(baselines[v_value][2])
+		zloc=str2num(ExtraPVs[v_value][2])
 	endif
-	findvalue /text="RSoXS Sample Rotation" baselines
+	findvalue /text="RSoXS Sample Rotation" ExtraPVs
 	if(v_value >=0)
-		R1loc=str2num(baselines[v_value][2])
-		anglestr = num2str(str2num(baselines[v_value][2]))
+		R1loc=90-str2num(ExtraPVs[v_value][2])
+		anglestr =  num2str(90-str2num(ExtraPVs[v_value][2]))
 	endif
 	
 	if(xloc*yloc*zloc*r1loc*0==0)
 		notes += "( X="+num2str(xloc)+", Y="+num2str(yloc)+", Z="+num2str(zloc)+", R1="+num2str(r1loc)+")"
 	endif
 	
-	duplicate baselines, extrainfo, extraPVs
-	
+	duplicate ExtraPVs, extrainfo
+	wave /t columnnames
 
-	
 	wave /z datawave = $(columnnames[0])
 	if(!waveexists(datawave))
 		setdatafolder root:NEXAFS:scans
@@ -11299,4 +11257,113 @@ function /s QANT_addmetadatafromjson(path, key, filename, metadatalist)
 	splitstring /e="\"" + key+ "\": \"([^\"]*)\"" s_value, kvalue
 	metadatalist = addlistitem(key+":"+kvalue,metadatalist)
 	return metadatalist
+end
+
+
+
+function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
+
+	string basenum
+	splitstring /e="^([[:digit:]]*)" basename, basenum
+	
+	string /g basescanname = basename
+	string /g pnameimages = "NistRSoXS_Data"
+	string /g pnamemd = "NistRSoXS_Metadata"
+	newpath /o/q/z $pnameimages, pathtodata + basenum + ":"
+	if(v_flag!=0)
+		newpath /o/q $pnameimages, pathtodata
+		pnamemd = pname
+	else
+		string listofjsonl = IndexedFile($pnameimages, -1, ".jsonl")
+		if(strlen(listofjsonl)>0)
+			pnamemd = pnameimages
+		else
+			pnamemd = pname
+		endif
+	endif
+
+	
+	LoadWave/q/O/J/D/A/K=0/P=$(pname)/W basename+"-primary.csv"
+
+	wave /z datawave = $(stringfromlist(0,S_waveNames))
+	if(!waveexists(datawave))
+		return -1
+	endif
+	if(whichlistitem("timeW",s_wavenames)>=0)
+		wave /z times = timeW
+	else
+		wave /z times
+	endif
+	MAKE /N=(itemsinlist(s_waveNames)) /t columnnames = stringfromlist(p,s_wavenames)
+	
+	//monitors
+	string mdfiles= indexedfile($(pnamemd),-1,".csv")
+	string metadatafilenames = greplist(mdfiles,"^"+basename+".*_monitor[.]csv$")
+
+	string mdfilename
+	string monitorname
+	variable i
+	duplicate /free times, goodpulse, rises, falls
+	goodpulse = 0
+	for(i=0;i<itemsinlist(metadatafilenames);i+=1)
+		mdfilename = stringfromlist(i,metadatafilenames)
+		Splitstring /e="^"+basename+"-(.*)_monitor[.]csv$" mdfilename, monitorname
+		//print monitorname
+		LoadWave/L={0,1,0,0,2}/Q/O/J/D/n=$cleanupname(monitorname,0)/K=0/P=$(pnamemd)/m mdfilename
+		
+		wave mdwave = $stringfromlist(0,s_wavenames)
+		wave newchannelwave = NRB_splitsignal(mdwave,times, rises, falls, goodpulse)
+		insertpoints  0,1,columnnames
+		columnnames[0] = nameofwave(newchannelwave)
+	endfor
+	
+	//populate the baseline and metadata lists
+	
+	make /t mdlist
+	
+	string jsonfiles= indexedfile($(pnamemd),-1,".jsonl")
+	variable jsonfound=0
+	string metadatafilename
+	string /g metadata=""
+	if(strlen(jsonfiles) < 5)
+		//print "Currently can't load metadata json or jsonl file"
+		mdlist = {"could not find metadata jsonl"}
+	else
+		jsonfound = 1
+		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*jsonl"))
+		metadata = addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"sample_name",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"sample_desc",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"sample_id",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"sample_set",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"user_name",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"user_id",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"notes",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"uid",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"dim1",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"dim2",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"dim3",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"chemical_formula",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"density",metadatafilename,metadata)
+		metadata = addmetadatafromjson(pnamemd,"project_desc",metadatafilename,metadata)
+		metadata = replacestring(":",metadata,"  -  ")
+		redimension /n=(itemsinlist(metadata)) mdlist
+		mdlist[] = stringfromlist(p,metadata)
+		
+	endif	
+	
+	//baselines
+	getfilefolderinfo /z /q /P=$(pnameimages) basename+"-baseline.csv"
+	if(v_flag!=0)
+		print "no baselines loaded"
+	else
+		LoadWave/Q/O/J/D/n=baselines/K=0/P=$(pnameimages)/m  basename+"-baseline.csv"
+		wave /t baselines = $stringfromlist(0,S_waveNames)
+		matrixtranspose baselines
+		if(cmpstr(nameofwave(baselines),"ExtraPVs"))
+			duplicate /o baselines, ExtraPVs
+		endif
+	endif
 end
