@@ -11297,6 +11297,8 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	MAKE /N=(itemsinlist(s_waveNames)) /t columnnames = stringfromlist(p,s_wavenames)
 	
 	//monitors
+	
+	
 	string mdfiles= indexedfile($(pnamemd),-1,".csv")
 	string metadatafilenames = greplist(mdfiles,"^"+basename+".*_monitor[.]csv$")
 
@@ -11305,14 +11307,50 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	variable i
 	duplicate /free times, goodpulse, rises, falls
 	goodpulse = 0
+	pathinfo $pnamemd
+	string pathstring = s_path, filepath
+	make /t/n=(itemsinlist(metadatafilenames)) wavenames
+	make /n=(itemsinlist(metadatafilenames)) filerefs, monitorlens
+	make /free/wave/n=(itemsinlist(metadatafilenames)) monitorwaves	
+	variable fileref
 	for(i=0;i<itemsinlist(metadatafilenames);i+=1)
 		mdfilename = stringfromlist(i,metadatafilenames)
 		Splitstring /e="^"+basename+"-(.*)_monitor[.]csv$" mdfilename, monitorname
 		//print monitorname
-		LoadWave/L={0,1,0,0,2}/Q/O/J/D/n=$cleanupname(monitorname,0)/K=0/P=$(pnamemd)/m mdfilename
 		
-		wave mdwave = $stringfromlist(0,s_wavenames)
-		wave newchannelwave = NRB_splitsignal(mdwave,times, rises, falls, goodpulse)
+		//variable timer = startmstimer
+		
+		//LoadWave/L={0,1,15000,0,2}/Q/O/J/D/n=$cleanupname(monitorname,0)/K=1/P=$(pnamemd)/m mdfilename
+		
+		//LoadWave/Q/O/G/D/n=$cleanupname(monitorname,0)/K=1/P=$(pnamemd)/m mdfilename
+		
+		//wave mdwave = $stringfromlist(0,s_wavenames)
+		fileref = nan
+		open /R fileref as pathstring + mdfilename
+		wavenames[i] = cleanupname(monitorname,0)
+		make /d/n=(10000,2) /o $wavenames[i]
+		monitorwaves[i] = $wavenames[i]
+		filerefs[i] = fileref
+		insertpoints  0,1,columnnames
+		columnnames[0] = wavenames[i]
+		
+	endfor
+	variable timer = startmstimer
+	multithread /NT=(itemsinlist(metadatafilenames)) monitorlens[] = load_file(filerefs[p],monitorwaves[p],10000)
+	variable microsecs = stopmstimer(timer)
+	print num2str(microsecs)+" microseconds to load monitors"
+	close /A
+	for(i=0;i<itemsinlist(metadatafilenames);i+=1)
+		
+		wave mdwave = monitorwaves[i]//load_file(filepath, cleanupname(monitorname,0))
+		if(!waveexists(mdwave))
+			continue
+		endif
+		redimension /n=(monitorlens[i],2) mdwave
+		
+		wave newchannelwave = QANT_splitsignal(mdwave,times, rises, falls, goodpulse)
+		//variable microsecs = stopmstimer(timer)
+		//print num2str(microsecs)+" microseconds to load monitor"
 		insertpoints  0,1,columnnames
 		columnnames[0] = nameofwave(newchannelwave)
 	endfor
@@ -11325,29 +11363,30 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	variable jsonfound=0
 	string metadatafilename
 	string /g metadata=""
+	
 	if(strlen(jsonfiles) < 5)
 		//print "Currently can't load metadata json or jsonl file"
 		mdlist = {"could not find metadata jsonl"}
 	else
 		jsonfound = 1
 		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*jsonl"))
-		metadata = addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"sample_name",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"sample_desc",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"sample_id",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"sample_set",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"user_name",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"user_id",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"notes",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"uid",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"dim1",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"dim2",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"dim3",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"chemical_formula",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"density",metadatafilename,metadata)
-		metadata = addmetadatafromjson(pnamemd,"project_desc",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_desc",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_set",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"user_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"user_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"notes",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"uid",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim1",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim2",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim3",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"chemical_formula",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"density",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"project_desc",metadatafilename,metadata)
 		metadata = replacestring(":",metadata,"  -  ")
 		redimension /n=(itemsinlist(metadata)) mdlist
 		mdlist[] = stringfromlist(p,metadata)
@@ -11367,3 +11406,85 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		endif
 	endif
 end
+
+
+function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
+	wave wavein,times, rises, falls,goodpulse
+	
+	make /free /n=(dimsize(wavein,0)) /d timesin = wavein[p][0], datain = wavein[p][1]
+	
+	string name = nameofwave(wavein)
+	wave /z waveout = $("_"+name)
+	if(numpnts(wavein)<2* numpnts(times))
+		print "not valid waves"
+		return waveout
+	endif
+	make /o/n=(dimsize(times,0)) $("m_"+name), $("s_"+name), $("f_"+name)
+	wave waveout = $("m_"+name), stdwave = $("s_"+name)//, fncwave = $("f_"+name)
+	make /n=(dimsize(times,0)) /free pntlower, pntupper
+	pntupper = binarysearch(timesin,times[p])
+	pntupper = pntupper[p]==-2 ? numpnts(timesin)-1 : pntupper[p]
+	duplicate /o /free pntupper, pntlower, pntlower1
+	pntlower1 = binarysearch(timesin,times[p]-1.5)
+	insertpoints /v=0 0,1,pntlower
+	make /free temprises, tempfalls
+	waveout = mean(datain,pntlower1[p]+2,pntupper[p]-0)
+	stdwave = sqrt(variance(datain,pntlower1[p]+2,pntupper[p]-0))
+	variable i, meanvalue, alreadygood, err
+	for(i=0;i<dimsize(times,0);i+=1)
+		if(pntupper[i] - pntlower[i] < 3)
+			continue
+		endif
+		//meanvalue = mean(datain,pntlower[i],pntupper[i])
+		meanvalue = (9/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
+		try
+			findlevels /B=3/EDGE=1 /Q /P /D=temprises /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE // look for rising and falling edges
+			findlevels /B=3/EDGE=2 /Q /P /D=tempfalls /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE
+		catch
+			err = getRTError(1)
+			//print getErrMessage(err)
+			goodpulse[i]=0
+			break
+		endtry
+		if(dimsize(temprises,0) == 1 && dimsize(tempfalls,0)== 1 ) // did we find a single pulse?
+			alreadygood = goodpulse[i]
+			rises[i] = timesin(temprises[0]) // if so, change them to times (so they work for all channels)
+			falls[i] = timesin(tempfalls[0])
+			waveout[i] = mean(datain,binarysearchinterp(timesin,rises[i])+1,binarysearchinterp(timesin,falls[i])-1)
+			stdwave[i] = sqrt(variance(datain,binarysearchinterp(timesin,rises[i])+1,binarysearchinterp(timesin,falls[i])-1))
+			goodpulse[i]=1
+		else
+			if(alreadygood) // have we already found the rising and falling times?
+				waveout[i] = mean(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i]))
+				stdwave[i] = sqrt(variance(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i])))
+			else
+				goodpulse[i]=0
+			endif
+		endif
+	endfor
+	
+	//curvefit
+	return waveout
+end
+
+
+threadsafe function load_file(variable file_ref, wave/d monitor_wave,variable maxlen)
+	variable len, linenum = 0
+	string line
+	variable num1, num2
+	FReadLine file_ref, line
+	do
+		FReadLine file_ref, line
+		len = strlen(line)
+		if (len == 0)
+			break		// No more lines to be read
+		endif
+		sscanf line, "%f,%f,*", num1, num2
+		
+		monitor_wave[linenum][0] = num1
+		monitor_wave[linenum][1] = num2
+		linenum+=1
+	while(linenum<maxlen)
+	return linenum
+end
+
