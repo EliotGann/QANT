@@ -11249,20 +11249,9 @@ function /s QANT_NEXAFSfileEXt_bluesky() // Bluesky
 	return ".csv"
 end
 
-
-function /s QANT_addmetadatafromjson(path, key, filename, metadatalist)
-	string path, key, filename, metadatalist
-	string kvalue
-	grep /LIST/q/e="\"" + key+ "\": \"([^\"]*)\""/P=$(path) filename
-	splitstring /e="\"" + key+ "\": \"([^\"]*)\"" s_value, kvalue
-	metadatalist = addlistitem(key+":"+kvalue,metadatalist)
-	return metadatalist
-end
-
-
-
 function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
-
+	Execute "SetIgorOption Str2DoubleMode=0"
+	variable timer2 = startmstimer
 	string basenum
 	splitstring /e="^([[:digit:]]*)" basename, basenum
 	
@@ -11294,9 +11283,12 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	else
 		wave /z times
 	endif
-	MAKE /N=(itemsinlist(s_waveNames)) /t columnnames = stringfromlist(p,s_wavenames)
+	// AL Could use ListToTextWave here.
+	MAKE /o/N=(itemsinlist(s_waveNames)) /t columnnames = stringfromlist(p,s_wavenames)
 	
-	//monitors
+	
+	
+	//monitors - this section is slowing things down
 	
 	
 	string mdfiles= indexedfile($(pnamemd),-1,".csv")
@@ -11309,55 +11301,49 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	goodpulse = 0
 	pathinfo $pnamemd
 	string pathstring = s_path, filepath
-	make /t/n=(itemsinlist(metadatafilenames)) wavenames
-	make /n=(itemsinlist(metadatafilenames)) filerefs, monitorlens
-	make /free/wave/n=(itemsinlist(metadatafilenames)) monitorwaves	
+	Variable nummonitors = itemsinlist(metadatafilenames)
+	make /free/t/n=(nummonitors) wavenames
+	make /free/n=(nummonitors) filerefs, monitorlens
+	make /free/wave/n=(nummonitors) monitorwaves
+	
 	variable fileref
-	for(i=0;i<itemsinlist(metadatafilenames);i+=1)
+	for(i=0;i<nummonitors;i+=1)	
 		mdfilename = stringfromlist(i,metadatafilenames)
 		Splitstring /e="^"+basename+"-(.*)_monitor[.]csv$" mdfilename, monitorname
-		//print monitorname
-		
-		//variable timer = startmstimer
-		
-		//LoadWave/L={0,1,15000,0,2}/Q/O/J/D/n=$cleanupname(monitorname,0)/K=1/P=$(pnamemd)/m mdfilename
-		
-		//LoadWave/Q/O/G/D/n=$cleanupname(monitorname,0)/K=1/P=$(pnamemd)/m mdfilename
-		
-		//wave mdwave = $stringfromlist(0,s_wavenames)
 		fileref = nan
 		open /R fileref as pathstring + mdfilename
 		wavenames[i] = cleanupname(monitorname,0)
-		make /d/n=(10000,2) /o $wavenames[i]
-		monitorwaves[i] = $wavenames[i]
 		filerefs[i] = fileref
 		insertpoints  0,1,columnnames
 		columnnames[0] = wavenames[i]
 		
 	endfor
-	variable timer = startmstimer
-	multithread /NT=(itemsinlist(metadatafilenames)) monitorlens[] = load_file(filerefs[p],monitorwaves[p],10000)
-	variable microsecs = stopmstimer(timer)
-	print num2str(microsecs)+" microseconds to load monitors"
+
+	MultiThread monitorwaves[] = load_file(filerefs[p])
+
 	close /A
-	for(i=0;i<itemsinlist(metadatafilenames);i+=1)
+	for(i=0;i<nummonitors;i+=1)
 		
-		wave mdwave = monitorwaves[i]//load_file(filepath, cleanupname(monitorname,0))
-		if(!waveexists(mdwave))
+		
+		if(!waveexists(monitorwaves[i]))
 			continue
 		endif
-		redimension /n=(monitorlens[i],2) mdwave
-		
+		duplicate /o monitorwaves[i], $wavenames[i]
+		wave mdwave = $wavenames[i]
 		wave newchannelwave = QANT_splitsignal(mdwave,times, rises, falls, goodpulse)
-		//variable microsecs = stopmstimer(timer)
-		//print num2str(microsecs)+" microseconds to load monitor"
 		insertpoints  0,1,columnnames
 		columnnames[0] = nameofwave(newchannelwave)
 	endfor
 	
+	// end monitors
+	
+	
+	
+	
+	
 	//populate the baseline and metadata lists
 	
-	make /t mdlist
+	make /o/t mdlist
 	
 	string jsonfiles= indexedfile($(pnamemd),-1,".jsonl")
 	variable jsonfound=0
@@ -11405,6 +11391,9 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 			duplicate /o baselines, ExtraPVs
 		endif
 	endif
+	variable microsecs2 = stopmstimer(timer2)
+	print num2str(microsecs2/1e6)+" s to load everything"
+	Execute "SetIgorOption Str2DoubleMode=1"
 end
 
 
@@ -11468,7 +11457,7 @@ function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
 end
 
 
-threadsafe function load_file(variable file_ref, wave/d monitor_wave,variable maxlen)
+threadsafe function load_file_orig(variable file_ref, wave/d monitor_wave,variable maxlen)
 	variable len, linenum = 0
 	string line
 	variable num1, num2
@@ -11488,3 +11477,36 @@ threadsafe function load_file(variable file_ref, wave/d monitor_wave,variable ma
 	return linenum
 end
 
+threadsafe function /wave load_file(variable file_ref)
+	// AL: We assume that the first line of the file contains header information,
+	// so read that in even though we don't do anything with it.
+	String line
+	FReadLine file_ref, line
+	
+	FStatus file_ref
+	Variable remainingFileSize = V_logEOF - V_filePos
+	String fileContents = ""
+	fileContents = PadString(fileContents, remainingFileSize, 0)
+	FBinRead file_ref, fileContents	// Read entire file into a string
+	WAVE/T fileLinesTextWave = ListToTextWave(fileContents, "\n")
+	Variable numLinesInFile = numpnts(fileLinesTextWave)
+	make /d/n=(numLinesInFile,2) /free monitor_wave
+	Variable linenum=0, num1, num2
+	
+	for(linenum=0; linenum < numLinesInFile; linenum++)
+		sscanf fileLinesTextWave[linenum], "%f,%f,*", num1, num2
+		monitor_wave[linenum][0] = num1
+		monitor_wave[linenum][1] = num2
+	EndFor
+	
+	return monitor_wave
+end
+
+function /s QANT_addmetadatafromjson(path, key, filename, metadatalist)
+	string path, key, filename, metadatalist
+	string kvalue
+	grep /LIST/q/e="\"" + key+ "\": \"([^\"]*)\""/P=$(path) filename
+	splitstring /e="\"" + key+ "\": \"([^\"]*)\"" s_value, kvalue
+	metadatalist = addlistitem(key+":"+kvalue,metadatalist)
+	return metadatalist
+end
