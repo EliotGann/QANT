@@ -2487,7 +2487,7 @@ function QANT_CalcNormalizations(scanstocalc)
 						
 						Note newdatawave, wnote+"\nReference divided : " + normchan + ";"
 						replotdata=1
-						if(stringmatch(Channels[k],"*_phd_*") || stringmatch(Channels[k],"*Beamstop*") || stringmatch(Channels[k],"*diode*"))
+						if(stringmatch(Channels[k],"*_phd_*") || stringmatch(Channels[k],"*beamstop*") || stringmatch(Channels[k],"*diode*"))
 							newdatawave = -ln(newdatawave) // it it's a diode, we are doing transmission, which we change here to optical density
 						elseif(stringmatch(Channels[k],"*mcp*"))
 							newdatawave = newdatawave // not sure what to do with the mcp data yet - self absorption needs to be taken into account
@@ -2890,13 +2890,13 @@ function QANT_CalcNormalizations(scanstocalc)
 		//	display /k=1 /n=QANT_Contrastvis as "delta vs beta plots"
 			for(i=0;i<numcontrasts;i+=1)
 				setdatafolder root:NEXAFS:ContrastFunctions
-				newdatafolder /o/s $replacestring("'",(contwavefldr1[i] + contwavefldr2[i]),"")
+				newdatafolder /o/s $(contwavefldr1[i] + contwavefldr2[i])
 				if(cmpstr(nameofwave(contdelta1[i]),"vacdelta"))
 					duplicate/o contdelta1[i], $nameofwave(contdelta1[i])
-					wave contrast = $replacestring("'",nameofwave(contdelta1[i]),"")
+					wave contrast = $nameofwave(contdelta1[i])
 				else
 					duplicate/o contdelta2[i], $nameofwave(contdelta2[i])
-					wave contrast = $replacestring("'",nameofwave(contdelta2[i]),"")
+					wave contrast = $nameofwave(contdelta2[i])
 				endif
 				wave del1 = contdelta1[i]
 				wave bet1 = contbeta1[i]
@@ -5543,14 +5543,14 @@ function QANT_PlotPeakResults()
 			make /o/n=(nfits) angles = QANT_getOther(scannames[p])
 			if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 				// try beamlineenergy from wavenotes?
-				angles = numberbykey("BeamlineEnergy",note(scanwaves[p]), "=",";")
-				if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
+//				angles = numberbykey("BeamlineEnergy",note(scanwaves[p]), "=",";")
+//				if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 					killwaves angles
 					useangles=0
 					make /o/n=(nfits)/t names =  QANT_getName(scannames[p])
-				else
-					useother=1
-				endif
+//				else
+//					useother=1
+//				endif
 			else
 				useother=1
 			endif
@@ -9566,7 +9566,7 @@ function /wave SpliceintoF2(BareAtomMu, BetaWave, EnWave)
 	redimension/D BareAtomMu, BetaWave, EnWave
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s SplicedMu
-	newdatafolder /o/s $(replacestring("'",nameofscan,""))
+	newdatafolder /o/s $nameofscan
 	if(waveexists($nameofchannel))
 		// we have already done this calculation, do don't repeat it
 		wave outputMu = $nameofchannel
@@ -9656,8 +9656,7 @@ function /wave SpliceintoF2(BareAtomMu, BetaWave, EnWave)
 	
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedF2
-	string cleanname2 = cleanupName(nameofscan,0)
-	newdatafolder /o/s $(replacestring("'",nameofscan,""))
+	newdatafolder /o/s $nameofscan
 	if(waveexists($nameofchannel))
 		// we have already done this calculation, do don't repeat it
 		wave F2 = $nameofchannel
@@ -9690,7 +9689,7 @@ function /wave f1wavefromf2(F2, density) // algorithm from Hongping Yan
 	// make a folder for the resulting extended F1
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedF1
-	newdatafolder /o/s $(replacestring("'",getwavesdatafolder(F2,0),""))
+	newdatafolder /o/s $getwavesdatafolder(F2,0)
 	if(waveexists($nameofwave(F2)))
 		// we have already done this calculation, do don't repeat it
 		return $nameofwave(F2)
@@ -9737,7 +9736,7 @@ function /wave F2toBeta(fwave, enwave, density)
 	lambda[0]=99999
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedBeta
-	newdatafolder /o/s $(replacestring("'",getwavesdatafolder(fwave,0),""))
+	newdatafolder /o/s $getwavesdatafolder(fwave,0)
 	duplicate /o fwave,$nameofwave(fwave) // put this is the right folder and name it depending on if we are converting F2 or F1
 	wave fullrangeBeta = $nameofwave(fwave)
 	note /k fullrangeBeta, note(fwave) + "\rConverted from F2 to Beta with Molecular Weight = " + num2str(MW) + " g/mol and density = " + num2str(density) + " g/ml"
@@ -9757,7 +9756,7 @@ function /wave F1toDelta(fwave, enwave, density)
 	lambda[0]=99999
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedDelta
-	newdatafolder /o/s $(replacestring("'",getwavesdatafolder(fwave,0),""))
+	newdatafolder /o/s $getwavesdatafolder(fwave,0)
 	duplicate /o fwave,$nameofwave(fwave) // put this is the right folder and name it depending on if we are converting F2 or F1
 	wave fullrangeDelta = $nameofwave(fwave)
 	note /k fullrangeDelta, note(fwave) + "\rConverted from f1 to delta with Molecular Weight = "+ num2str(MW) + " g/mol and density = " + num2str(density) + " g/ml"
@@ -9769,7 +9768,7 @@ function /wave EnRangeBeta(FullRangeBeta, FullRangeEnergy, enwave)
 	wave FullRangeBeta, FullRangeEnergy, enwave
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ScaledBeta
-	newdatafolder /o/s $(replacestring("'",getwavesdatafolder(FullRangeBeta,0),""))
+	newdatafolder /o/s $getwavesdatafolder(FullRangeBeta,0)
 	duplicate /o enwave,$nameofwave(FullRangeBeta) // put this is the right folder and name it depending on if we are converting F2 or F1
 	duplicate /o enwave,$nameofwave(enwave)
 	wave enrangeBeta = $nameofwave(FullRangeBeta)
@@ -9782,7 +9781,7 @@ function /wave EnRangeDelta(FullRangeDelta, FullRangeEnergy, enwave)
 	wave FullRangeDelta, FullRangeEnergy, enwave
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ScaledDelta
-	newdatafolder /o/s $(replacestring("'",getwavesdatafolder(FullRangeDelta,0),""))
+	newdatafolder /o/s $getwavesdatafolder(FullRangeDelta,0)
 	duplicate /o enwave,$nameofwave(FullRangeDelta) // put this is the right folder and name it depending on if we are converting F2 or F1
 	duplicate /o enwave,$nameofwave(enwave)
 	wave enrangeDelta = $nameofwave(FullRangeDelta)
