@@ -2557,7 +2557,7 @@ function QANT_CalcNormalizations(scanstocalc)
 				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 &&v_npnts>10)
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
-					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*"))
+					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "*monoen*")&&!stringmatch(Channels[k], x_axis))
 						// START CHANGE
 						if(subcursors)
 							//offset = faveragexy(xwave,newdatawave,curax,curbx)
@@ -5534,7 +5534,7 @@ function QANT_PlotPeakResults()
 		endfor
 	endif
 	//print GetWavesDataFolder(tracenametowaveref("QANT_Resultplot",stringfromlist(0,listofpeaksets)),0)
-	make /o/n=(nfits) angles = QANT_getAngle(scannames[p])
+	make /o/n=(nfits) angles = cos(QANT_getAngle(scannames[p])*pi/180)^2
 	
 	if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 		make /o/n=(nfits) angles = QANT_getAngle(fitnames[p])
@@ -5569,7 +5569,7 @@ function QANT_PlotPeakResults()
 		make /o/n=(nfits) SumofAreas=0, ErrorofSumofAreas=0
 		if(useangles)
 			appendtograph /w=QANT_Resultplot SumofAreas vs angles
-			Label  /w=QANT_Resultplot bottom "Angle [deg]"
+			Label  /w=QANT_Resultplot bottom "Angle [cos(angle)^2]"
 		else
 			appendtograph /w=QANT_Resultplot SumofAreas vs names
 		endif
@@ -5626,42 +5626,44 @@ function QANT_PlotPeakResults()
 			svar fitresult16a = root:NEXAFS:fitting:fitresult16a
 			svar fitresult17a = root:NEXAFS:fitting:fitresult17a
 			svar fitresultaligned = root:NEXAFS:fitting:fitresultaligned
+			duplicate/o angles, degangles
+			degangles = acos(sqrt(angles))*180/pi
 			if(useother)
-				
+				// no fit
 			elseif(plot16a==1) // do all the other fits which will not be in the final plot, and store those values
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma 
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
 				sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
 				sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
 			elseif(plot16a==2)
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
 				sprintf fitresult16a, "%2.4g ± %2.2g", angleout, w_sigma[0]
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
 				sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
 			elseif(plot16a==3)
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D 
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D 
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
 				sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
@@ -5674,11 +5676,11 @@ function QANT_PlotPeakResults()
 				K2 = 2*pi/180;
 				CurveFit/W=2/q/H="0010"/NTHR=0 sin SumofAreas  /I=1 /w=ErrorofSumofAreas /F={.95, 1, Contour} /X=angles /D 
 			elseif(plot16a==1)
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /F={.95, 1, Contour} /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a_rad W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /F={.95, 1, Contour} /X=angles /D
 			elseif(plot16a==2)
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /F={.95, 1, Contour} /X=angles /D
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a_rad W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /F={.95, 1, Contour} /X=angles /D
 			elseif(plot16a==3)
-				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas  /F={.95, 1, Contour} /X=angles /D 
+				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a_rad W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas  /F={.95, 1, Contour} /X=angles /D 
 			endif
 			RemoveFromGraph/z UP_SumofAreas,LP_SumofAreas,UC_SumofAreas,LC_SumofAreas
 			wave UC_SumofAreas, LC_SumofAreas
@@ -5823,6 +5825,23 @@ Function QANT_Nexafs_Vector_9_16a(w,theta) : FitFunc
 
 	return w[1]* (1/3)*(1+(1/2)*(3*cos(theta*pi/180)^2-1)*(3*cos(w[0]*pi/180)^2-1))
 End
+Function QANT_Nexafs_Vector_9_16a_rad(w,theta) : FitFunc
+	Wave w
+	Variable theta
+
+	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
+	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
+	//CurveFitDialog/ Equation:
+	//CurveFitDialog/ f(theta) = Offset+Scaling* (1/3)*(1+(1/2)*(3*cos(theta*pi/180)^2-1)*(3*cos(gamma*pi/180)^2-1))
+	//CurveFitDialog/ End of Equation
+	//CurveFitDialog/ Independent Variables 1
+	//CurveFitDialog/ theta
+	//CurveFitDialog/ Coefficients 3
+	//CurveFitDialog/ w[0] = gamma
+	//CurveFitDialog/ w[1] = Scaling
+
+	return w[1]* (1/3)*(1+(1/2)*(3*theta-1)*(3*cos(w[0]*pi/180)^2-1))
+End
 
 Function QANT_Nexafs_Plane_9_17a(w,Theta) : FitFunc
 	Wave w
@@ -5844,6 +5863,26 @@ Function QANT_Nexafs_Plane_9_17a(w,Theta) : FitFunc
 	return  w[1]* (2/3)*(1-(1/4)*(3*cos(theta*pi/180)^2-1)*(3*cos(w[0]*pi/180)^2-1))
 End
 
+Function QANT_Nexafs_Plane_9_17a_rad(w,Theta) : FitFunc
+	Wave w
+	Variable Theta
+
+	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
+	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
+	//CurveFitDialog/ Equation:
+	//CurveFitDialog/ theta =  (Offset+theta)*pi/180
+	//CurveFitDialog/ 
+	//CurveFitDialog/ f(theta) = Scaling* (2/3)*(1-(1/4)*(3*cos(theta)^2-1)*(3*cos(gamma*pi/180)^2-1))
+	//CurveFitDialog/ End of Equation
+	//CurveFitDialog/ Independent Variables 1
+	//CurveFitDialog/ Theta
+	//CurveFitDialog/ Coefficients 2
+	//CurveFitDialog/ w[0] = Gamma
+	//CurveFitDialog/ w[1] = Scaling
+
+	return  w[1]* (2/3)*(1-(1/4)*(3*theta-1)*(3*cos(w[0]*pi/180)^2-1))
+End
+
 
 Function QANT_Nexafs_Alignment_9_14a(w,theta) : FitFunc
 	Wave w
@@ -5861,6 +5900,23 @@ Function QANT_Nexafs_Alignment_9_14a(w,theta) : FitFunc
 	//CurveFitDialog/ w[1] = Scaling
 
 	return w[1]* ( sin(w[0]*pi/180)^2 * sin(theta*pi/180)^2 +  Cos(w[0]*pi/180)^2 * Cos(theta*pi/180)^2 ) 
+End
+Function QANT_Nexafs_Alignment_9_14a_rad(w,theta) : FitFunc
+	Wave w
+	Variable theta
+
+	//CurveFitDialog/ These comments were created by the Curve Fitting dialog. Altering them will
+	//CurveFitDialog/ make the function less convenient to work with in the Curve Fitting dialog.
+	//CurveFitDialog/ Equation:
+	//CurveFitDialog/ f(theta) = Scaling* (cos(Gamma*pi/180)^2 + sin(Gamma*pi/180)^2 * cos(theta*pi/180)^2) 
+	//CurveFitDialog/ End of Equation
+	//CurveFitDialog/ Independent Variables 1
+	//CurveFitDialog/ theta
+	//CurveFitDialog/ Coefficients 2
+	//CurveFitDialog/ w[0] = Gamma
+	//CurveFitDialog/ w[1] = Scaling
+
+	return w[1]* ( sin(w[0]*pi/180)^2 * (1-theta) +  Cos(w[0]*pi/180)^2 * theta ) 
 End
 
 Function QANT_Fit_PlotfitFormula_pop(pa) : PopupMenuControl
