@@ -1995,7 +1995,7 @@ function QANT_LoadDark()
 			string channelname
 			for(i=0;i<itemsinlist(channellist);i+=1)
 				channelname = stringfromlist(i, channellist)
-				if(stringmatch(channelname,"*columnnames*") || stringmatch(channelname,"*Index*")   || stringmatch(channelname,"*Energy*")  || stringmatch(channelname,"Ring Current")  || stringmatch(channelname,x_axis) || stringmatch(channelname,"*time") )
+				if(stringmatch(channelname,"*columnnames*") || stringmatch(channelname,"*Index*")   || stringmatch(channelname,"*Energy*")  || stringmatch(channelname,"*monoen*")  || stringmatch(channelname,"Ring Current")  || stringmatch(channelname,x_axis) || stringmatch(channelname,"*time") )
 					continue
 				endif
 				wave channel = $(darkfolder + possiblyquotename(stringfromlist(i,channellist)))
@@ -2474,7 +2474,7 @@ function QANT_CalcNormalizations(scanstocalc)
 					duplicate/o datawave, $Channels[k]
 					
 					wave newdatawave = $Channels[k]
-					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "BGsub_*"))
+					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "*monoen*")&&!stringmatch(Channels[k], "BGsub_*"))
 						// these are all channels which should never be normalized (cmpstr is non zero if the two elements are NOT identical)
 						if(numpnts(refwave)<numpnts(newdatawave))
 							redimension /n=(numpnts(refwave)) newdatawave
@@ -2557,7 +2557,7 @@ function QANT_CalcNormalizations(scanstocalc)
 				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 &&v_npnts>10)
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
-					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*"))
+					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "*monoen*"))
 						// START CHANGE
 						if(subcursors)
 							//offset = faveragexy(xwave,newdatawave,curax,curbx)
@@ -2702,7 +2702,7 @@ function QANT_CalcNormalizations(scanstocalc)
 			endif
 			string warningtext = ""
 			for(k=0;k<dimsize(channels,0);k+=1)
-				if(!cmpstr(channels[k],normchan)||!cmpstr(Channels[k], "ExpTime")||!cmpstr(Channels[k], "Ring Current")||!cmpstr(Channels[k], "EnergySetpoint")||!cmpstr(Channels[k], "Index") || stringmatch(Channels[k], "*Energy*") || stringmatch(Channels[k], "BGsub_*"))
+				if(!cmpstr(channels[k],normchan)||!cmpstr(Channels[k], "ExpTime")||!cmpstr(Channels[k], "Ring Current")||!cmpstr(Channels[k], "EnergySetpoint")||!cmpstr(Channels[k], "Index") || stringmatch(Channels[k], "*Energy*")|| stringmatch(Channels[k], "*monoen*") || stringmatch(Channels[k], "BGsub_*"))
 					continue
 				endif
 				if(!channelsel[k])
@@ -3299,7 +3299,7 @@ function QANT_replotdata([nochangeofplot,ontop])
 		
 		
 		SetAxis /w=QANT_plot/A=2 left
-		modifygraph/w=QANT_plot log(bottom)=1
+		//modifygraph/w=QANT_plot log(bottom)=1
 		ModifyGraph/w=QANT_plot grid(left)=2,grid(bottom)=1,tick=2,mirror=1,minor=1,standoff=1;DelayUpdate
 		ModifyGraph/w=QANT_plot gridStyle=3, lsize = thickness
 		ModifyGraph/w=QANT_plot gridRGB(left)=(56576,56576,56576),gridRGB(bottom)=(52224,52224,52224)
@@ -11221,6 +11221,19 @@ function /s QANT_LoadNEXAFSfile_bluesky(pathn) // BS_Suitcase
 		anglestr =  num2str(90-str2num(ExtraPVs[v_value][2]))
 	endif
 	
+	//findvalue /text="en_monoen_cff" ExtraPVs
+	findvalue /text="en_polarization" ExtraPVs
+
+	if(v_value >=0)
+		otherstr=ExtraPVs[v_value][2]
+	endif
+	//findvalue /text="en_monoen_cff" ExtraPVs
+	findvalue /text="en_sample_polarization" ExtraPVs
+
+	if(v_value >=0)
+		otherstr=ExtraPVs[v_value][2]
+	endif
+	
 	if(xloc*yloc*zloc*r1loc*0==0)
 		notes += "( X="+num2str(xloc)+", Y="+num2str(yloc)+", Z="+num2str(zloc)+", R1="+num2str(r1loc)+")"
 	endif
@@ -11425,7 +11438,7 @@ function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
 			continue
 		endif
 		//meanvalue = mean(datain,pntlower[i],pntupper[i])
-		meanvalue = (9/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
+		meanvalue = (8/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
 		try
 			findlevels /B=3/EDGE=1 /Q /P /D=temprises /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE // look for rising and falling edges
 			findlevels /B=3/EDGE=2 /Q /P /D=tempfalls /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE
