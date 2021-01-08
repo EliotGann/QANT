@@ -2557,11 +2557,8 @@ function QANT_CalcNormalizations(scanstocalc)
 				if(waveexists(datawave) && wavetype(chanwave,1)!=2 && wavetype(datawave,1)==1 &&v_npnts>10)
 					duplicate/o datawave, $Channels[k]
 					wave newdatawave = $Channels[k]
-<<<<<<< HEAD
-					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "*monoen*"))
-=======
 					if(cmpstr(Channels[k], "ExpTime")&&cmpstr(Channels[k], "Ring Current")&&cmpstr(Channels[k], "EnergySetpoint")&&cmpstr(Channels[k], "Index")&&!stringmatch(Channels[k], "*Energy*")&&!stringmatch(Channels[k], "*monoen*")&&!stringmatch(Channels[k], x_axis))
->>>>>>> 389c4d3059e0b1271bfd59c9d98634cde94beefd
+
 						// START CHANGE
 						if(subcursors)
 							//offset = faveragexy(xwave,newdatawave,curax,curbx)
