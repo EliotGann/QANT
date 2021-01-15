@@ -9,13 +9,13 @@ Install Github Desktop, create a github account if you haven't already
 
 1.) Clone this repository to your local computer (doesn't matter where you store it, the default location is probaby fine)
 
-2.) Create a shortcut (windows) or alias (mac) of the QANTboot.ipf file and put it in the "Igor Procedures" folder (within Igor, go to  Help -> Igor Pro User Files)
+2.) Create a shortcut (windows) or alias (mac) of the the "QANT_Igor" directory in the "Igor Procedures" folder (within Igor, go to  Help -> Igor Pro User Files)
 
 3.) within the "user procedures" (within Igor, go to  Help -> Igor Pro User Files) folder create a folder called "Atomic Scattering Factors".
 
-4.) Download the atomic scattering factors from henke (http://henke.lbl.gov/optical_constants/asf.html)  and place the unzipped files in this directory, along with a copy of the "Atomic Weights.txt" file from github (note an alias/shortcut of this files does not work).
+4.) Download the atomic scattering factors from henke (http://henke.lbl.gov/optical_constants/asf.html)  and place the unzipped files in this directory, along with a copy of the "Atomic Weights.txt" file from the github folder (note an alias/shortcut of this files does not work).
 
-5.) create a shortcut/alias of QANT.ipf and elementlibrary.ipf and place them somewhere in "user procedures".  
+5.) create a shortcut/alias of "QANT_users" girhub directory somewhere in "user procedures".  
 
 Also download and install the latest version of Optical Constants Library (seperate github repository https://github.com/EliotGann/Optical-Constants-Database) for optical constants integration.
 
