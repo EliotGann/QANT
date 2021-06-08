@@ -11401,8 +11401,10 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		duplicate /o monitorwaves[i], $wavenames[i]
 		wave mdwave = $wavenames[i]
 		wave newchannelwave = QANT_splitsignal(mdwave,times, rises, falls, goodpulse)
-		insertpoints  0,1,columnnames
-		columnnames[0] = nameofwave(newchannelwave)
+		if(waveexists(newchannelwave))
+			insertpoints  0,1,columnnames
+			columnnames[0] = nameofwave(newchannelwave)
+		endif
 	endfor
 	
 	// end monitors
