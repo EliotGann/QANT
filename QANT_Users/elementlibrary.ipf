@@ -42,7 +42,7 @@ function loadelementlibrary()
 		newdatafolder /o/s $elementname
 		killwaves /a/z
 		variable /g weight=Atomicweights[v_value]
-		LoadWave/q/o/J/D/W/A/P=ElementPath/K=0 stringfromlist(i,filelist)
+		LoadWave/G/D/K=0/L={0,1,0,0,3}/A/W/P=ElementPath/B="C=1,F=1,N=e_ev_,T=4;C=1,F=1,N=f1,T=4;C=1,F=1,N=f2,T=4;"/O/Q stringfromlist(i,filelist)
 		wave/z f2interp
 		duplicate energy, f2interp
 		setscale /i x,10,30000,"eV",  f2interp
