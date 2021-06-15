@@ -13,7 +13,7 @@ Install Github Desktop, create a github account if you haven't already
 
 3.) within the "user procedures" (within Igor, go to  Help -> Igor Pro User Files) folder create a folder called "Atomic Scattering Factors".
 
-4.) Download the atomic scattering factors from henke (http://henke.lbl.gov/optical_constants/asf.html)  and place the unzipped files in this directory, along with a copy of the "Atomic Weights.txt" file from the github folder (note an alias/shortcut of this files does not work).
+4.) Download the atomic scattering factors from henke (http://henke.lbl.gov/optical_constants/asf.html)  and place the unzipped files in this directory, along with a copy of the "AtomicWeight.txt" file from the github folder (note an alias/shortcut of this files does not work).
 
 5.) create a shortcut/alias of "QANT_users" girhub directory somewhere in "user procedures".  
 
