@@ -9617,7 +9617,7 @@ end
 
 function /wave SpliceintoF2(BareAtomMu, BetaWave, EnWave)
 	wave BareAtomMu, BetaWave, EnWave
-	string nameofscan = getwavesdatafolder(betawave,0)
+	string nameofscan = replacestring("'",getwavesdatafolder(betawave,0),"")
 	string nameofchannel = nameofwave(betawave)
 	string foldersave = getdatafolder(1)
 	redimension/D BareAtomMu, BetaWave, EnWave
@@ -9746,7 +9746,7 @@ function /wave f1wavefromf2(F2, density) // algorithm from Hongping Yan
 	// make a folder for the resulting extended F1
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedF1
-	newdatafolder /o/s $getwavesdatafolder(F2,0)
+	newdatafolder /o/s $replacestring("'",getwavesdatafolder(F2,0),"")
 	if(waveexists($nameofwave(F2)))
 		// we have already done this calculation, do don't repeat it
 		return $nameofwave(F2)
@@ -9793,7 +9793,7 @@ function /wave F2toBeta(fwave, enwave, density)
 	lambda[0]=99999
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedBeta
-	newdatafolder /o/s $getwavesdatafolder(fwave,0)
+	newdatafolder /o/s $replacestring("'",getwavesdatafolder(fwave,0),"")
 	duplicate /o fwave,$nameofwave(fwave) // put this is the right folder and name it depending on if we are converting F2 or F1
 	wave fullrangeBeta = $nameofwave(fwave)
 	note /k fullrangeBeta, note(fwave) + "\rConverted from F2 to Beta with Molecular Weight = " + num2str(MW) + " g/mol and density = " + num2str(density) + " g/ml"
@@ -9813,7 +9813,7 @@ function /wave F1toDelta(fwave, enwave, density)
 	lambda[0]=99999
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ExtendedDelta
-	newdatafolder /o/s $getwavesdatafolder(fwave,0)
+	newdatafolder /o/s $replacestring("'",getwavesdatafolder(fwave,0),"")
 	duplicate /o fwave,$nameofwave(fwave) // put this is the right folder and name it depending on if we are converting F2 or F1
 	wave fullrangeDelta = $nameofwave(fwave)
 	note /k fullrangeDelta, note(fwave) + "\rConverted from f1 to delta with Molecular Weight = "+ num2str(MW) + " g/mol and density = " + num2str(density) + " g/ml"
@@ -9825,7 +9825,7 @@ function /wave EnRangeBeta(FullRangeBeta, FullRangeEnergy, enwave)
 	wave FullRangeBeta, FullRangeEnergy, enwave
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ScaledBeta
-	newdatafolder /o/s $getwavesdatafolder(FullRangeBeta,0)
+	newdatafolder /o/s $replacestring("'",getwavesdatafolder(FullRangeBeta,0),"")
 	duplicate /o enwave,$nameofwave(FullRangeBeta) // put this is the right folder and name it depending on if we are converting F2 or F1
 	duplicate /o enwave,$nameofwave(enwave)
 	wave enrangeBeta = $nameofwave(FullRangeBeta)
@@ -9838,7 +9838,7 @@ function /wave EnRangeDelta(FullRangeDelta, FullRangeEnergy, enwave)
 	wave FullRangeDelta, FullRangeEnergy, enwave
 	setdatafolder root:NEXAFS
 	newdatafolder /o/s ScaledDelta
-	newdatafolder /o/s $getwavesdatafolder(FullRangeDelta,0)
+	newdatafolder /o/s $replacestring("'",getwavesdatafolder(FullRangeDelta,0),"")
 	duplicate /o enwave,$nameofwave(FullRangeDelta) // put this is the right folder and name it depending on if we are converting F2 or F1
 	duplicate /o enwave,$nameofwave(enwave)
 	wave enrangeDelta = $nameofwave(FullRangeDelta)
