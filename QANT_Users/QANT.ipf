@@ -1093,6 +1093,26 @@ function /S QANT_channellistdisp()
 	if(CorEXPtime)
 		basiclist = removefromlist("ExpTime",basiclist)
 	endif
+	variable i
+	string testchannel
+	for(i=itemsinlist(basiclist)-1;i>=0;i--)
+		testchannel = stringfromlist(i,basiclist)
+		if(stringmatch(testchannel,"*mirror2*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*grating*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*cff*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*dataref*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*datatemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*timetemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*0"))
+			basiclist = removefromlist(testchannel,basiclist)
+		endif
+	endfor
 	//return removefromlist(nchan,removefromlist(x_axis,removefromlist("none",basiclist,";")))
 	return removefromlist("ExtraPVs",removefromlist("extrainfo",removefromlist(x_axis,removefromlist("none",basiclist,";"))))
 end
@@ -1107,13 +1127,19 @@ function /S QANT_channellistxaxis()
 		if(findlistitem(x_axis,basiclist) == -1)
 			string energylikeobject
 			splitstring /e=";([^;]*[E|e]nergy?[^;]*);" basiclist, energylikeobject
-			if(strlen(energylikeobject)>1)
+			if(strlen(energylikeobject)>0)
 				x_axis = energylikeobject
 				PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=12,fstyle=0,fColor=(0,0,0)
 			else
-				basiclist += ";Choose an X-axis first"
-				x_axis =  "Choose an X-axis first"
-				PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=14,fstyle=3,fColor=(65280,0,0)
+				splitstring /e=";([^;]*[M|m]ono?[^;]*);" basiclist, energylikeobject
+				if(strlen(energylikeobject)>0)
+					x_axis = energylikeobject
+					PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=12,fstyle=0,fColor=(0,0,0)
+				else
+					basiclist += ";Choose an X-axis first"
+					x_axis =  "Choose an X-axis first"
+					PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=14,fstyle=3,fColor=(65280,0,0)
+				endif
 			endif
 		else
 			PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=12,fstyle=0,fColor=(0,0,0)
@@ -1121,6 +1147,24 @@ function /S QANT_channellistxaxis()
 	else
 		PopupMenu QANT_popup_X_xais win=QANTLoaderPanel, fSize=12,fstyle=0,fColor=(0,0,0)
 	endif
+	variable i
+	string testchannel
+	for(i=itemsinlist(basiclist)-1;i>=0;i--)
+		testchannel = stringfromlist(i,basiclist)
+		if(stringmatch(testchannel,"*mirror2*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*grating*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*cff*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*dataref*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*datatemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*timetemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		endif
+	endfor
 	return basiclist
 end
 function /S QANT_channellistconv()
@@ -6891,6 +6935,7 @@ function QANT_ShowRefs()
 	wave /z refssel
 	make/o/t /n=(3) labels = {"Name","Default?","Energy"} 
 	variable/g minsearch, maxsearch, peakloc, smsize
+	string/g ref_axis
 	minsearch = minsearch<1 ? 288 : minsearch
 	maxsearch = maxsearch<1 ? 294 : maxsearch
 	peakloc = peakloc < 1 ? 291.65 : peakloc
@@ -6922,6 +6967,9 @@ function QANT_ShowRefs()
 	Button QANT_EnCal_rem_but,pos={520,230},size={140,50},proc=QANT_butUpdateEnCal,title="Reset Calibrations of all\rScans in Energy Range\rto 0"
 	Button QANT_EnCal_remAll_but,pos={670,230},size={140,50},proc=QANT_butUpdateEnCal,title="Reset Calibration Values of\rALL Scans to 0"
 	Button QANT_EnCalAvg_but,pos={670,160},size={140,50},proc=QANT_butUpdateEnCal,title="Set Calibration Values\rto Average of Scans in\rChosen Energy Range"
+	PopupMenu QANT_popup_ref_chan,pos={526.00,131.00},size={279.00,19.00},bodyWidth=174,proc=QANT_ref_axis_pop,title="Reference Channel:"
+	PopupMenu QANT_popup_ref_chan,fSize=12,fStyle=0
+	PopupMenu QANT_popup_ref_chan,mode=2,popvalue="en_monoen_readback",value= #"QANT_channellistxaxis()"
 	Display/W=(220,61,498,296)/HOST=# 
 	SetDrawLayer UserFront
 	DrawText 0.0539568345323741,-0.255208333333333,"Correction Value (contamination on I0)"
@@ -7295,6 +7343,12 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 	avg = paramisdefault(avg) ? 0 : avg
 	QANT_CalcNormalizations("all")
 	string foldersave = getdatafolder(1)
+	svar /z ref_axis = root:NEXAFS:refs:ref_axis
+	if(!svar_exists(ref_axis))
+		setdatafolder root:NEXAFS
+		newdatafolder/o/s refs
+		string /g ref_axis = "Ref_Foil_VF"
+	endif
 	setdatafolder root:NEXAFS:
 	wave/t Scans = scanlist
 	svar x_axis
@@ -7306,8 +7360,9 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 	if(datafolderexists("RefCorrectedData"))
 		setdatafolder $"RefCorrectedData"
 	else
-		print "Error finding corrected data, please load a reference"
-		return 0
+		setdatafolder "Scans"
+		print "warning - not using corrected data, please load a reference to accurate correction"
+		//return 0
 	endif
 	for(i=0;i<num;i+=1)
 		if(datafolderexists(scans[i][0]))
@@ -7316,7 +7371,7 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 			continue
 		endif
 		wave xwave = $("root:Nexafs:Scans:"+possiblyquotename(scans[i][0])+":" + possiblyquotename(x_axis))
-		wave refwave = Ref_Foil_VF
+		wave refwave = $ref_axis
 		
 		if(!waveexists(xwave) || !waveexists(refwave))
 			setdatafolder ::
@@ -7329,13 +7384,9 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 		wavestats/z/q refwave
 		minx = binarysearch(xwave,enmin)
 		maxx = binarysearch(xwave,enmax)
-		findpeak/Q/B=(smsize)/r=[minx,maxx] refwave
-		if(!V_flag)
-			energyoffset = xwave(V_PeakLoc) - peakloc
-		else
-			setdatafolder ::
-			continue
-		endif
+		//findpeak/Q/B=(smsize)/r=[minx,maxx] refwave
+		wavestats /r=[minx,maxx] refwave
+		energyoffset = xwave(V_maxloc) - peakloc
 		energyoffsets[j] = energyoffset
 		svar mdate = $("root:Nexafs:Scans:"+possiblyquotename(scans[i][0])+":mdate")
 		if(svar_exists(mdate))
@@ -7373,6 +7424,12 @@ function QANT_RmEnCalibration(enmin, enmax)
 	variable enmin, enmax
 	QANT_CalcNormalizations("all")
 	string foldersave = getdatafolder(1)
+	svar /z ref_axis = root:NEXAFS:refs:ref_axis
+	if(!svar_exists(ref_axis))
+		setdatafolder root:NEXAFS
+		newdatafolder/o/s refs
+		string /g ref_axis = "Ref_Foil_VF"
+	endif
 	setdatafolder root:NEXAFS:
 	wave/t Scans = scanlist
 	svar x_axis
@@ -7383,8 +7440,9 @@ function QANT_RmEnCalibration(enmin, enmax)
 	if(datafolderexists("RefCorrectedData"))
 		setdatafolder $"RefCorrectedData"
 	else
-		print "Error finding corrected data, please load a reference"
-		return 0
+		setdatafolder "Scans"
+		print "warning - not using corrected data, please load a reference to accurate correction"
+		//return 0
 	endif
 	for(i=0;i<num;i+=1)
 		if(datafolderexists(scans[i][0]))
@@ -7393,7 +7451,7 @@ function QANT_RmEnCalibration(enmin, enmax)
 			continue
 		endif
 		wave xwave = $x_axis
-		wave refwave = Ref_Foil_VF
+		wave refwave = $ref_axis
 		
 		if(!waveexists(xwave) || !waveexists(refwave))
 			setdatafolder ::
@@ -7412,7 +7470,8 @@ function QANT_RmEnCalibration(enmin, enmax)
 	for(i=0;i<dimsize(enoffscannames,0);i+=1)
 		setdatafolder root:NEXAFS:Scans:
 		setdatafolder enoffscannames(i)
-		string /g enoffset = "0"
+		variable /g enoffset = 0
+		string /g enoffsetstr = "0"
 	endfor
 	setdatafolder foldersave
 	QANT_listNEXAFSscans()
@@ -7426,7 +7485,9 @@ function QANT_RmEnCalibrationAll()
 	for(i=0;i<dimsize(Scans,0);i+=1)
 		setdatafolder root:NEXAFS:Scans:
 		setdatafolder Scans[i][0]
-		string /g enoffset = "0"
+		variable /g enoffset = 0
+		string /g enoffsetstr = "0"
+		
 	endfor
 	setdatafolder foldersave
 	QANT_listNEXAFSscans()
@@ -11672,10 +11733,11 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 	// find the monitor with the most points - we will use this as the reference timestamps - this can get hairy if there is a stochastic PV
 	
 	//
-	duplicate /o monitorwaves[0], $wavenames[0]
-	wave mdwave = $wavenames[0] // this is the correctly named monitor wave with the most points
-	make /n=(dimsize(mdwave,0)) /d timesref = mdwave[p][0], data = mdwave[p][1] // save the times as the reference times we will interp to
-	
+	duplicate /o monitorwaves[0], tempmdwave
+	wave mdwave = tempmdwave // this is the correctly named monitor wave with the most points
+	make /n=(dimsize(mdwave,0)) /d timesref = mdwave[p][0], $("m_"+wavenames[0]) = mdwave[p][1] // save the times as the reference times we will interp to
+	insertpoints  0,1,columnnames
+	columnnames[0] = "m_"+wavenames[0]
 	
 	for(i=1;i<nummonitors;i+=1)
 		if(!waveexists(monitorwaves[i]))
@@ -11685,8 +11747,8 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 		wave mdwave = $wavenames[i]
 		duplicate mdwave, $wavenames[i]+"0" //save the raw data in this unlisted wave
 		make /o/n=(dimsize(mdwave,0)) /d timetemp = mdwave[p][0], datatemp = mdwave[p][1] // save the times as the reference times we will interp to
-		duplicate /o/d timesref, $wavenames[i] //overwrite the raw data with an empty wave we will interpolate to
-		wave mdwave = $wavenames[i] // make sure the wave ref is updated
+		duplicate /o/d timesref, $("m_"+wavenames[i]) //overwrite the raw data with an empty wave we will interpolate to
+		wave mdwave = $("m_"+wavenames[i]) // make sure the wave ref is updated
 		mdwave[] = interp(timesref[p],timetemp,datatemp)
 		insertpoints  0,1,columnnames
 		columnnames[0] = nameofwave(mdwave)
@@ -11701,8 +11763,8 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 			continue
 		endif
 		duplicate /o primarywave, $primarynames[i]+"0"
-		duplicate /o timesref, $primarynames[i]
-		wave primarywave = $primarynames[i]
+		duplicate /o timesref, $("p_"+primarynames[i])
+		wave primarywave = $("p_"+primarynames[i])
 		wave primarywaveold = $primarynames[i]+"0"
 		primarywave[] = interp(timesref[p],timew,primarywaveold)
 		insertpoints  0,1,columnnames
@@ -11885,3 +11947,23 @@ function /s QANT_addmetadatafromjson(path, key, filename, metadatalist)
 	metadatalist = addlistitem(key+":"+kvalue,metadatalist)
 	return metadatalist
 end
+
+Function QANT_ref_axis_pop(pa) : PopupMenuControl
+	STRUCT WMPopupAction &pa
+
+	switch( pa.eventCode )
+		case 2: // mouse up
+			Variable popNum = pa.popNum
+			String popStr = pa.popStr
+			variable modenum = whichlistitem(popStr,QANT_channellistxaxis())+1
+			PopupMenu QANT_popup_ref_chan win=QANT_RefScans_win, mode=modenum
+			PopupMenu QANT_popup_ref_chan win=QANT_RefScans_win, fSize=12,fstyle=0,fColor=(0,0,0)
+			svar ref_axis = root:NEXAFS:refs:ref_axis
+			ref_axis = popstr
+			break
+		case -1: // control being killed
+			break
+	endswitch
+
+	return 0
+End
