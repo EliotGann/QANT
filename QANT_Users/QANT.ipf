@@ -6936,9 +6936,9 @@ function QANT_ShowRefs()
 	make/o/t /n=(3) labels = {"Name","Default?","Energy"} 
 	variable/g minsearch, maxsearch, peakloc, smsize
 	string/g ref_axis
-	minsearch = minsearch<1 ? 288 : minsearch
-	maxsearch = maxsearch<1 ? 294 : maxsearch
-	peakloc = peakloc < 1 ? 291.65 : peakloc
+	minsearch = minsearch<1 ? 280 : minsearch
+	maxsearch = maxsearch<1 ? 296 : maxsearch
+	peakloc = peakloc < 1 ? 284 : peakloc
 	
 	SetDrawLayer UserBack
 	DrawText 27,54,"References"
@@ -6959,7 +6959,7 @@ function QANT_ShowRefs()
 	SetVariable QANT_Var_EnCal_MinSearch,value= root:NEXAFS:refs:minsearch
 	SetVariable QANT_Var_EnCal_MaxSearch,pos={566,63},size={217,16},bodyWidth=80,title="Maximum X value for search"
 	SetVariable QANT_Var_EnCal_MaxSearch,value= root:NEXAFS:refs:maxsearch
-	SetVariable QANT_Var_EnCal_CorrectLoc,pos={555,85},size={228,16},bodyWidth=80,title="Calibrated X Location for Peak"
+	SetVariable QANT_Var_EnCal_CorrectLoc,pos={555,85},size={228,16},bodyWidth=80,title="Calibrated X Location for Edge"
 	SetVariable QANT_Var_EnCal_CorrectLoc,value= root:NEXAFS:refs:peakloc
 	SetVariable QANT_Var_EnCal_Smoothing,pos={599,107},size={184,16},bodyWidth=80,title="Smoothing size (pnts)"
 	SetVariable QANT_Var_EnCal_Smoothing,value= root:NEXAFS:refs:smsize
@@ -7385,8 +7385,9 @@ function QANT_CalcEnergyCalibrationAll(enmin, enmax, peakloc, smsize,[avg])
 		minx = binarysearch(xwave,enmin)
 		maxx = binarysearch(xwave,enmax)
 		//findpeak/Q/B=(smsize)/r=[minx,maxx] refwave
-		wavestats /r=[minx,maxx] refwave
-		energyoffset = xwave(V_maxloc) - peakloc
+		//wavestats /r=[minx,maxx] refwave
+		EdgeStats/p /r=[minx,maxx] /f=.2 refwave
+		energyoffset = xwave(V_EdgeLoc1) - peakloc
 		energyoffsets[j] = energyoffset
 		svar mdate = $("root:Nexafs:Scans:"+possiblyquotename(scans[i][0])+":mdate")
 		if(svar_exists(mdate))
