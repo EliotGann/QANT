@@ -11319,6 +11319,127 @@ function /s QANT_NEXAFSfileEXt_bluesky() // Bluesky
 	return ".csv"
 end
 
+
+function /s QANT_LoadNEXAFSfile_bs_streaming(pathn) // BS_streaming suitcase
+	string pathn
+	variable fileref
+	open/r/F="NEXAFS files (*.csv,):.csv;" fileref as pathn
+	string fullpath = s_filename
+	FStatus fileref
+	if(V_flag==0)
+		return ""
+	endif
+	string pname = "NEXAFSPath"
+	string scanname = ""
+	scanname = replacestring("-primary.csv",s_filename,"")
+	string basename, basenum
+	splitstring /e="^([[:digit:]]*)-(.*)" scanname, basenum, basename
+	string foldersave = getdatafolder(1)
+	setdatafolder root:NEXAFS:
+	newdatafolder /O/S Scans
+	newdatafolder /O/S $cleanupname(scanname,1)
+
+	killwaves /Z/A
+	string /g filename = fullpath
+	getfilefolderinfo /p=NEXAFSPath /q/z filename//+".csv"
+	string /g filesize
+	sprintf filesize, "%d" ,v_logEOF
+	string /g cdate
+	sprintf cdate, "%d" ,v_creationdate
+	string /g mdate
+	sprintf mdate, "%d" ,v_modificationdate
+	
+	string pathtodata = parseFilePath(1,fullpath,":",1,0)
+	load_bluesky_streaming(scanname,pathtodata,pname)
+	svar metadata
+
+	string /g notes = stringbykey("notes", metadata) + stringbykey("sample_name", metadata)
+	string /g otherstr = stringbykey("dim1", metadata)
+	string /g EnOffsetstr = ""
+	string /g SampleName = cleanupname(basename,0)
+	string /g SampleSet = stringbykey("sample_set", metadata)
+	string /g refscan = "Default"
+	string /g darkscan = "Default"
+	string /g enoffset = "Default"
+	
+	wave /z timew
+	if(waveexists(timew))
+		string /g acqtime = num2str(timew[0]) 
+	else
+		string /g acqtime = cdate
+	endif
+	wave /t ExtraPVs
+	
+	findvalue /text="time" ExtraPvs
+	string /g acqtime = ExtraPVs[v_value][1]
+	findvalue /text="RSoXS Sample Rotation" ExtraPVs
+	string /g anglestr
+	if(strlen(anglestr)*0!=0)
+		anglestr = ExtraPVs[v_value][1]
+	endif
+	
+	
+	variable xloc=nan, yloc=nan, zloc=nan, r1loc=nan, r2loc=nan
+	
+	findvalue /text="RSoXS Sample Outboard-Inboard" ExtraPVs
+	if(v_value >=0)
+		xloc=str2num(ExtraPVs[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Up-Down" ExtraPVs
+	if(v_value >=0)
+		yloc=str2num(ExtraPVs[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Downstream-Upstream" ExtraPVs
+	if(v_value >=0)
+		zloc=str2num(ExtraPVs[v_value][2])
+	endif
+	findvalue /text="RSoXS Sample Rotation" ExtraPVs
+	if(v_value >=0)
+		R1loc=90-str2num(ExtraPVs[v_value][2])
+		anglestr =  num2str(90-str2num(ExtraPVs[v_value][2]))
+	endif
+	
+	//findvalue /text="en_monoen_cff" ExtraPVs
+	findvalue /text="en_polarization" ExtraPVs
+
+	if(v_value >=0)
+		otherstr=ExtraPVs[v_value][2]
+	endif
+	//findvalue /text="en_monoen_cff" ExtraPVs
+	findvalue /text="en_sample_polarization" ExtraPVs
+
+	if(v_value >=0)
+		otherstr=ExtraPVs[v_value][2]
+	endif
+	
+	if(xloc*yloc*zloc*r1loc*0==0)
+		notes += "( X="+num2str(xloc)+", Y="+num2str(yloc)+", Z="+num2str(zloc)+", R1="+num2str(r1loc)+")"
+	endif
+	
+	duplicate ExtraPVs, extrainfo
+	wave /t columnnames
+
+	wave /z datawave = $(columnnames[0])
+	if(!waveexists(datawave))
+		setdatafolder root:NEXAFS:scans
+		killdatafolder /z cleanupname(scanname,1)
+		setdatafolder foldersave
+		return ""
+	endif
+	if(numpnts(datawave) <5)
+		setdatafolder root:NEXAFS:scans
+		killdatafolder /z cleanupname(scanname,1)
+		setdatafolder foldersave
+		return ""
+	endif
+	setdatafolder foldersave
+	print "Loaded NEXAFS file : " + cleanupname(scanname,1)
+	return 	cleanupname(scanname,1)
+end
+function /s QANT_NEXAFSfileEXt_bs_streaming() // Bluesky
+	return ".csv"
+end
+
 function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	Execute "SetIgorOption Str2DoubleMode=0"
 	variable timer2 = startmstimer
@@ -11467,6 +11588,188 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	print num2str(microsecs2/1e6)+" s to load everything"
 	Execute "SetIgorOption Str2DoubleMode=1"
 end
+
+
+function load_bluesky_streaming(string basename,string pathtodata,string pname)
+	Execute "SetIgorOption Str2DoubleMode=0"
+	variable timer2 = startmstimer
+	string basenum
+	splitstring /e="^([[:digit:]]*)" basename, basenum
+	
+	string /g basescanname = basename
+	string /g pnameimages = "NistRSoXS_Data"
+	string /g pnamemd = "NistRSoXS_Metadata"
+	newpath /o/q/z $pnameimages, pathtodata + basenum + ":"
+	if(v_flag!=0)
+		newpath /o/q $pnameimages, pathtodata
+		pnamemd = pname
+	else
+		string listofjsonl = IndexedFile($pnameimages, -1, ".jsonl")
+		if(strlen(listofjsonl)>0)
+			pnamemd = pnameimages
+		else
+			pnamemd = pname
+		endif
+	endif
+
+	
+	LoadWave/q/O/J/D/A/K=0/P=$(pname)/W basename+"-primary.csv"
+
+	wave /z datawave = $(stringfromlist(0,S_waveNames))
+	if(!waveexists(datawave))
+		return -1
+	endif
+	if(whichlistitem("timeW",s_wavenames)>=0)
+		wave /z times = timeW
+	else
+		wave /z times
+	endif
+	// AL Could use ListToTextWave here.
+	MAKE /o/N=(itemsinlist(s_waveNames)) /t primarynames = stringfromlist(p,s_wavenames)
+	MAKE /o/N=(0) /t columnnames // only add monitors to the columns, although we could also interp the raw data too...
+	
+	
+	//monitors - this section is slowing things down
+	
+	
+	string mdfiles= indexedfile($(pnamemd),-1,".csv")
+	string metadatafilenames = greplist(mdfiles,"^"+basename+".*_monitor[.]csv$")
+
+	string mdfilename
+	string monitorname
+	variable i
+	duplicate /free times, goodpulse, rises, falls
+	goodpulse = 0
+	pathinfo $pnamemd
+	string pathstring = s_path, filepath
+	Variable nummonitors = itemsinlist(metadatafilenames)
+	make /free/t/n=(nummonitors) wavenames
+	make /free/n=(nummonitors) filerefs, monitorlens
+	make /free/wave/n=(nummonitors) monitorwaves
+	make /n=0 /t /free monitornames
+	
+	
+	variable fileref
+	for(i=0;i<nummonitors;i+=1)	
+		mdfilename = stringfromlist(i,metadatafilenames)
+		Splitstring /e="^"+basename+"-(.*)_monitor[.]csv$" mdfilename, monitorname
+		fileref = nan
+		open /R fileref as pathstring + mdfilename
+		wavenames[i] = cleanupname(monitorname,0)
+		filerefs[i] = fileref
+		insertpoints  0,1,monitornames
+		monitornames[0] = wavenames[i]
+	endfor
+
+	MultiThread monitorwaves[] = load_file(filerefs[p])
+
+	close /A
+	for(i=0;i<nummonitors;i+=1)
+		monitorlens = wavemin(monitorwaves[i])
+	endfor
+	
+	sort /r monitorlens, monitorlens, monitorwaves, wavenames, filerefs
+	// find the monitor with the most points - we will use this as the reference timestamps - this can get hairy if there is a stochastic PV
+	
+	//
+	duplicate /o monitorwaves[0], $wavenames[0]
+	wave mdwave = $wavenames[0] // this is the correctly named monitor wave with the most points
+	make /n=(dimsize(mdwave,0)) /d timesref = mdwave[p][0], data = mdwave[p][1] // save the times as the reference times we will interp to
+	
+	
+	for(i=1;i<nummonitors;i+=1)
+		if(!waveexists(monitorwaves[i]))
+			continue
+		endif
+		duplicate /o monitorwaves[i], $wavenames[i]
+		wave mdwave = $wavenames[i]
+		duplicate mdwave, $wavenames[i]+"0" //save the raw data in this unlisted wave
+		make /o/n=(dimsize(mdwave,0)) /d timetemp = mdwave[p][0], datatemp = mdwave[p][1] // save the times as the reference times we will interp to
+		duplicate /o/d timesref, $wavenames[i] //overwrite the raw data with an empty wave we will interpolate to
+		wave mdwave = $wavenames[i] // make sure the wave ref is updated
+		mdwave[] = interp(timesref[p],timetemp,datatemp)
+		insertpoints  0,1,columnnames
+		columnnames[0] = nameofwave(mdwave)
+	endfor
+	
+	for(i=0; i<numpnts(primarynames);i++)
+		if(stringmatch(primarynames[i],"*time*"))
+			continue
+		endif
+		wave primarywave = $primarynames[i]
+		if(wavetype(primarywave,1)!=1)
+			continue
+		endif
+		duplicate /o primarywave, $primarynames[i]+"0"
+		duplicate /o timesref, $primarynames[i]
+		wave primarywave = $primarynames[i]
+		wave primarywaveold = $primarynames[i]+"0"
+		primarywave[] = interp(timesref[p],timew,primarywaveold)
+		insertpoints  0,1,columnnames
+		columnnames[0] = nameofwave(primarywave)
+	endfor
+	
+	// end monitors
+	
+	
+	
+	
+	
+	//populate the baseline and metadata lists
+	
+	make /o/t mdlist
+	
+	string jsonfiles= indexedfile($(pnamemd),-1,".jsonl")
+	variable jsonfound=0
+	string metadatafilename
+	string /g metadata=""
+	
+	if(strlen(jsonfiles) < 5)
+		//print "Currently can't load metadata json or jsonl file"
+		mdlist = {"could not find metadata jsonl"}
+	else
+		jsonfound = 1
+		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*jsonl"))
+		metadata = QANT_addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_desc",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"sample_set",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"user_name",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"user_id",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"notes",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"uid",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim1",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim2",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"dim3",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"chemical_formula",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"density",metadatafilename,metadata)
+		metadata = QANT_addmetadatafromjson(pnamemd,"project_desc",metadatafilename,metadata)
+		metadata = replacestring(":",metadata,"  -  ")
+		redimension /n=(itemsinlist(metadata)) mdlist
+		mdlist[] = stringfromlist(p,metadata)
+		
+	endif	
+	
+	//baselines
+	getfilefolderinfo /z /q /P=$(pnameimages) basename+"-baseline.csv"
+	if(v_flag!=0)
+		print "no baselines loaded"
+	else
+		LoadWave/Q/O/J/D/n=baselines/K=0/P=$(pnameimages)/m  basename+"-baseline.csv"
+		wave /t baselines = $stringfromlist(0,S_waveNames)
+		matrixtranspose baselines
+		if(cmpstr(nameofwave(baselines),"ExtraPVs"))
+			duplicate /o baselines, ExtraPVs
+		endif
+	endif
+	variable microsecs2 = stopmstimer(timer2)
+	print num2str(microsecs2/1e6)+" s to load everything"
+	Execute "SetIgorOption Str2DoubleMode=1"
+end
+
 
 
 function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
