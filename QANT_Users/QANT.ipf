@@ -176,13 +176,14 @@ function QANT_listNEXAFSscans()
 	string curfolder
 	svar loadedfilelist = root:NEXAFS:oldfilelist
 	svar badfilelist = root:NEXAFS:badfilelist
+	svar x_axis = root:NEXAFS:x_axis
 	if(!svar_exists(badfilelist))
 		string /g root:NEXAFS:badfilelist
 		svar badfilelist = root:NEXAFS:badfilelist
 	endif
 	string newloadedfilelist =  ""
 	setdatafolder root:NEXAFS:
-	make/o /n=(num,11) /t scanlistfull, scanlist
+	make/o /n=(num,12) /t scanlistfull, scanlist
 	scanlist = scanlistfull
 	make /o /n=(num) enabled
 	make /o/n=(num,3) colorcolwave
@@ -235,10 +236,16 @@ function QANT_listNEXAFSscans()
 		if(!nvar_exists(selected) )
 			variable /g selected =0
 		endif
-//		scanlist[j][1] = notes
-//		scanlist[j][2] = Anglestr
-//		scanlist[j][3] = refscan
-//		scanlist[j][4] = darkscan
+		svar enoffsetstr
+		if(!svar_exists(enoffsetstr) )
+			string /g enoffsetstr = "0"
+		endif
+		wave xwave = $x_axis
+		string /g energyrange = num2str(round(wavemin(xwave))) + " - " + num2str(round(wavemax(xwave)))
+		svar acqtime
+		if(!svar_exists(acqtime) )
+			string /g acqtime ="0"
+		endif
 		scanlist[j][1] = SampleName
 		scanlist[j][2] = Anglestr
 		scanlist[j][3] = Otherstr
@@ -247,7 +254,10 @@ function QANT_listNEXAFSscans()
 		scanlist[j][6] = refscan
 		scanlist[j][7] = darkscan
 		selwavescanlist[j] = selected
-		svar filename, acqtime, filesize, cdate, mdate
+		svar /z filename, filesize, cdate, mdate
+		if(!svar_exists(filename))
+			string /g filename = samplename
+		endif
 		if(strsearch(badfilelist,filename,0)>0)
 			for(k=0;k<itemsinlist(badfilelist);k+=1)
 				if(stringmatch(filename, stringbykey("filename",stringfromlist(k,badfilelist),"=",",")))
@@ -255,13 +265,11 @@ function QANT_listNEXAFSscans()
 				endif
 			endfor
 		endif
-//		scanlist[j][6] = filename
-//		scanlist[j][5] = acqtime
-//		scanlist[j][7] = enoffset
 
 		scanlist[j][8] = acqtime
 		scanlist[j][9] = filename
 		scanlist[j][10] = enoffsetstr
+		scanlist[j][11] = energyrange
 		newloadedfilelist += "filename="+filename+","
 		newloadedfilelist += "Created Date="+cdate+","
 		newloadedfilelist += "Modified Date="+mdate+","
@@ -283,14 +291,14 @@ function QANT_listNEXAFSscans()
 	// ADDING for matchstr
 	// make a copy of scanlist and selscanwave
 	// sort scan list if there is sorting
-	redimension /n=(num,12) ScanList
-	ScanList[][11]=num2str(p)
+	redimension /n=(num,13) ScanList
+	ScanList[][12]=num2str(p)
 	nvar /z LastScanCol, ScanOrder
-	if(nvar_exists(LastScanCol) && LastScanCol >= 0 && LastScanCol <11 && nvar_exists(ScanOrder) && dimsize(Scanlist,0)>0)
+	if(nvar_exists(LastScanCol) && LastScanCol >= 0 && LastScanCol <12 && nvar_exists(ScanOrder) && dimsize(Scanlist,0)>0)
 		MDsort(scanlist,LastScanCol,reversed = ScanOrder)
 	endif
-	make /n=(num) /free listorder = str2num(Scanlist[p][11])
-	redimension /n=(num,11) ScanList
+	make /n=(num) /free listorder = str2num(Scanlist[p][12])
+	redimension /n=(num,12) ScanList
 	duplicate /free listorder, listorder2
 	listorder2=p
 	sort listorder,listorder2
@@ -644,7 +652,7 @@ function QANT_Loaderfunc()
 	dowindow /k QANTLoaderPanel
 	dowindow /k QANT_plot
 	//killdatafolder /Z NEXAFS
-	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.13 (Quick AS NEXAFS Tool)"
+	NewPanel /K=1 /n=QANTLoaderPanel  /W=(694,84,1570,713) as "QANT v1.14 (Quick AS NEXAFS Tool)"
 	ModifyPanel /w=QANTLoaderPanel fixedSize=1
 	debuggeroptions debugOnError=0
 	newdatafolder /o/s NEXAFS
@@ -663,12 +671,12 @@ function QANT_Loaderfunc()
 		make /o/n=(3) /T materialslistcols = {"Name","Scan","Channel"}
 	endif
 	if(!waveexists(scanlist))
-		make /o/n=(1,11) /T scanlist
+		make /o/n=(1,12) /T scanlist
 	endif
 	if(dimsize(scanlist,1)==8)
 		make /o /t /n=(dimsize(scanlist,0),dimsize(scanlist,1)) scanlistbackup
 		scanlistbackup = scanlist
-		redimension /n=(dimsize(scanlist,0),11) scanlist
+		redimension /n=(dimsize(scanlist,0),12) scanlist
 		scanlist[][0] = scanlistbackup[p][0] // scan name is the same  this is critical
 		scanlist[][1] = cleanupname(scanlistbackup[p][1],0) // new name is the same as old notes
 		scanlist[][2] = scanlistbackup[p][2] // angle is the same as angle
@@ -681,8 +689,8 @@ function QANT_Loaderfunc()
 		scanlist[][9] = scanlistbackup[p][6]
 		scanlist[][10] = scanlistbackup[p][7]
 	endif
-	if(dimsize(scanlist,1)!=11)
-		redimension /n=(dimsize(scanlist,0),11) scanlist
+	if(dimsize(scanlist,1)!=12)
+		redimension /n=(dimsize(scanlist,0),12) scanlist
 	endif
 	if(!waveexists(selwavescanlist))
 		make /o/n=(1) selwavescanlist
@@ -700,7 +708,7 @@ function QANT_Loaderfunc()
 		make /T/o/n=(1) channels=""
 	endif
 	//if(!waveexists(coltitles) || dimsize(coltitles,0)!=11)
-		make /o/n=11 /T coltitles={"File","Scan Name","Angle","Other","Set","Notes","Reference","Dark","Time","File from disk","Energy Offset"}
+		make /o/n=12 /T coltitles={"File","Scan Name","Angle","Other","Set","Notes","Reference","Dark","Time","File from disk","Energy Offset","Start Energy"}
 		//{"Name","Notes","Angle","Reference","Dark","Time","Filename","Energy Offset"}
 	//endif
 	if(!waveexists(enabled))
@@ -956,7 +964,7 @@ function QANT_Loaderfunc()
 	ListBox QANT_listbox_loadedfiles,selWave=root:NEXAFS:selwavescanlist
 	ListBox QANT_listbox_loadedfiles,colorWave=root:NEXAFS:colorcolwave
 	ListBox QANT_listbox_loadedfiles,titleWave=root:NEXAFS:coltitles,mode=9
-	ListBox QANT_listbox_loadedfiles,widths={74,77,34,35,75,150,64,54,155,97,71}
+	ListBox QANT_listbox_loadedfiles,widths={74,77,34,35,75,150,64,54,155,97,71,80}
 	ListBox QANT_listbox_loadedfiles,userColumnResize= 1
 	SetVariable QANT_strval_Matchstring,pos={325,11},size={151,16},bodyWidth=151,proc=QANT_Matchstr,title=" "
 	SetVariable QANT_strval_Matchstring,value= root:NEXAFS:matchstr,live= 1
@@ -1103,7 +1111,9 @@ function /S QANT_channellistdisp()
 			basiclist = removefromlist(testchannel,basiclist)
 		elseif(stringmatch(stringfromlist(i,basiclist),"*cff*"))
 			basiclist = removefromlist(testchannel,basiclist)
-		elseif(stringmatch(stringfromlist(i,basiclist),"*dataref*"))
+		elseif(stringmatch(stringfromlist(i,basiclist),"*data*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*timesref*"))
 			basiclist = removefromlist(testchannel,basiclist)
 		elseif(stringmatch(stringfromlist(i,basiclist),"*datatemp*"))
 			basiclist = removefromlist(testchannel,basiclist)
@@ -1157,11 +1167,15 @@ function /S QANT_channellistxaxis()
 			basiclist = removefromlist(testchannel,basiclist)
 		elseif(stringmatch(stringfromlist(i,basiclist),"*cff*"))
 			basiclist = removefromlist(testchannel,basiclist)
-		elseif(stringmatch(stringfromlist(i,basiclist),"*dataref*"))
+		elseif(stringmatch(stringfromlist(i,basiclist),"data*"))
 			basiclist = removefromlist(testchannel,basiclist)
-		elseif(stringmatch(stringfromlist(i,basiclist),"*datatemp*"))
+		elseif(stringmatch(stringfromlist(i,basiclist),"timesref*"))
 			basiclist = removefromlist(testchannel,basiclist)
-		elseif(stringmatch(stringfromlist(i,basiclist),"*timetemp*"))
+		elseif(stringmatch(stringfromlist(i,basiclist),"datatemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"timetemp*"))
+			basiclist = removefromlist(testchannel,basiclist)
+		elseif(stringmatch(stringfromlist(i,basiclist),"*0"))
 			basiclist = removefromlist(testchannel,basiclist)
 		endif
 	endfor
@@ -5271,7 +5285,7 @@ function QANT_ExportData(whichdata)
 			listofwaves = removefromlist(x_axis,listofwaves)
 			listofwaves = x_axis +";"+ listofwaves // put xaxis first
 		endif
-		header = "File Produced by QANTv1.13 by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
+		header = "File Produced by QANTv1.14 by Eliot Gann at the Australian Synchrotron and NIST (eliot.gann@nist.gov)\r"
 		header += "----------------------------------------------------\rList of dataseries and their notes:\r\r" 
 		for(j=0;j<itemsinlist(listofwaves);j+=1)
 			header += stringfromlist(j,listofwaves)+"\r"
@@ -11247,7 +11261,7 @@ Window QANT_About_QANT() : Panel
 	DrawText 176,32,"QANT"
 	SetDrawEnv fsize= 14,fstyle= 1,textxjust= 1,textyjust= 1
 	DrawText 181,60,"(Q)uick (A)ussietron (N)EXAFS (T)ool"
-	DrawText 222,40,"v1.13"
+	DrawText 222,40,"v1.14"
 	SetDrawEnv textxjust= 1,textyjust= 1
 	DrawText 183,101,"\\JCDeveloped by Eliot Gann (eliot.gann@nist.gov)\rPreviously at Australian Synchrotron\rCurrently National Institute of Standards and Technology"
 	SetDrawEnv textxjust= 1,textyjust= 1
@@ -11747,7 +11761,7 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 		duplicate /o monitorwaves[i], $wavenames[i]
 		wave mdwave = $wavenames[i]
 		duplicate mdwave, $wavenames[i]+"0" //save the raw data in this unlisted wave
-		make /o/n=(dimsize(mdwave,0)) /d timetemp = mdwave[p][0], datatemp = mdwave[p][1] // save the times as the reference times we will interp to
+		make /free/o/n=(dimsize(mdwave,0)) /d timetemp = mdwave[p][0], datatemp = mdwave[p][1] // save the times as the reference times we will interp to
 		duplicate /o/d timesref, $("m_"+wavenames[i]) //overwrite the raw data with an empty wave we will interpolate to
 		wave mdwave = $("m_"+wavenames[i]) // make sure the wave ref is updated
 		mdwave[] = interp(timesref[p],timetemp,datatemp)
