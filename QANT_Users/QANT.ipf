@@ -5596,10 +5596,10 @@ function QANT_PlotPeakResults()
 	make /o/n=(nfits) angles = cos(QANT_getAngle(scannames[p])*pi/180)^2
 	
 	if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
-		make /o/n=(nfits) angles = QANT_getAngle(fitnames[p])
+		make /o/n=(nfits) angles = COS(QANT_getAngle(fitnames[p])*pi/180)^2
 		if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 		// try other ? 
-			make /o/n=(nfits) angles = QANT_getOther(scannames[p])
+			make /o/n=(nfits) angles = cos(QANT_getOther(scannames[p])*pi/180)^2
 			if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 				// try beamlineenergy from wavenotes?
 //				angles = numberbykey("BeamlineEnergy",note(scanwaves[p]), "=",";")
@@ -5611,7 +5611,7 @@ function QANT_PlotPeakResults()
 //					useother=1
 //				endif
 			else
-				useother=1
+				useother=0 //(WE ARE GOOD)
 			endif
 		endif
 	endif
@@ -6095,19 +6095,29 @@ function QANT_FitGroup(fitgroupname,listoffits,listofpeaks, ListOfPeaksSplitErr)
 	setdatafolder root:NEXAFS:fitting
 	setdatafolder $fitgroupname
 	wave /t fitnames // the full paths to the original data which was fit
-	make /O/n=(dimsize(fitnames,0)) /t scannames
+	make /o/n=(dimsize(fitnames,0)) /t scannames
+	variable j
+	string fitname1,scanname1
+	for(j=0;j<dimsize(fitnames,0);j+=1)
+		fitname1 = fitnames[j]
+		splitstring /e=":([^:]*):[^:]*$" fitname1,scanname1
+		scannames[j]=scanname1
+	endfor
 	make /O/wave/n=(dimsize(fitnames,0)) fitwaves = $fitnames[p]
-	scannames[] = GetWavesDataFolder(fitwaves[p],0)
+	//scannames[] = GetWavesDataFolder(fitwaves[p],0)
 	make/o /n=(dimsize(listoffits,0)) angles = QANT_getAngle(scannames[p])
-	if(sum(angles)*0!=0)
-		scannames[] = fitnames[p]
+	if(abs(wavemax(angles)-wavemin(angles))<.001 ||sum(angles)*0!=0)
+		//scannames[] = fitnames[p]
 		make/o /n=(dimsize(listoffits,0)) angles = QANT_getAngle(scannames[p])
-		if(sum(angles)*0!=0)
-			listofpeaks[][1]="Bad Alpha"
-			listofpeaks[][2]="Bad Alpha"
-			listofpeaks[][3]="Bad Alpha"
-			ListOfPeaksSplitErr[][1,6]="Bad Alpha"
-			return 0
+		if(abs(wavemax(angles)-wavemin(angles))<.001 ||sum(angles)*0!=0)
+			make/o /n=(dimsize(listoffits,0)) angles = QANT_getOTHER(scannames[p])
+			if(abs(wavemax(angles)-wavemin(angles))<.001 ||sum(angles)*0!=0)
+				listofpeaks[][1]="Bad Alpha"
+				listofpeaks[][2]="Bad Alpha"
+				listofpeaks[][3]="Bad Alpha"
+				ListOfPeaksSplitErr[][1,6]="Bad Alpha"
+				return 0
+			ENDIF
 		endif
 	endif
 	string listofpeaksets = wavelist("*psr*",";","")
