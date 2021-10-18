@@ -11741,7 +11741,7 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 
 	close /A
 	for(i=0;i<nummonitors;i+=1)
-		monitorlens = wavemin(monitorwaves[i])
+		monitorlens[i] = numpnts(monitorwaves[i])
 	endfor
 	
 	sort /r monitorlens, monitorlens, monitorwaves, wavenames, filerefs
