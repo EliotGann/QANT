@@ -4625,9 +4625,13 @@ function/s QANT_WhooskaNametoMPF2(stringin)
 			return "LogNormal"
 		case "GAUSSIAN":
 			return "Gauss"
+		case "GaussPeak":
+			return "Gauss"
 		case "ASYM_GAUS":
 			return "ExpModGauss"
 		default:
+			print "no peak name with this name"
+			print stringin
 			return stringin
 	endswitch
 end
