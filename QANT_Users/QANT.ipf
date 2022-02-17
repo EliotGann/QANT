@@ -4580,7 +4580,7 @@ function/s QANT_MakeCwaveFromPeakSet(stringin,temp)
 	endif
 	strswitch(stringfromlist(0,stringin))
 		case "NEXAFS_EDGE":
-			make /o/n=4 $wname
+			make /o/n=4/d $wname
 			wave waveout = $wname
 			waveout[0] = str2num(stringfromlist(2,stringin))
 			waveout[1] = str2num(stringfromlist(1,stringin))
@@ -4588,14 +4588,20 @@ function/s QANT_MakeCwaveFromPeakSet(stringin,temp)
 			waveout[3] = str2num(stringfromlist(4,stringin))
 			break
 		case "GAUSSIAN":
-			make /o/n=3 $wname
+			make /o/n=3/d $wname
+			wave waveout = $wname
+			waveout[0] = str2num(stringfromlist(2,stringin))
+			waveout[1] = str2num(stringfromlist(1,stringin))
+			waveout[2] = str2num(stringfromlist(3,stringin)) / (2*sqrt(2*ln(2)))
+		case "GaussPeak":
+			make /o/n=3/d $wname
 			wave waveout = $wname
 			waveout[0] = str2num(stringfromlist(2,stringin))
 			waveout[1] = str2num(stringfromlist(1,stringin))
 			waveout[2] = str2num(stringfromlist(3,stringin)) / (2*sqrt(2*ln(2)))
 			break
 		case "ASYM_GAUS":
-			make /o/n=4 $wname
+			make /o/n=4/d $wname
 			wave waveout = $wname
 			waveout[0] = str2num(stringfromlist(2,stringin))
 			waveout[1] = str2num(stringfromlist(1,stringin))
@@ -4603,7 +4609,7 @@ function/s QANT_MakeCwaveFromPeakSet(stringin,temp)
 			waveout[3] = str2num(stringfromlist(4,stringin))
 			break
 		default:
-			make /o/n=(Itemsinlist(stringin)-1) $wname
+			make /o/n=(Itemsinlist(stringin)-1)/d $wname
 			wave waveout = $wname
 			variable i
 			waveout[0] = str2num(stringfromlist(2,stringin))
@@ -4678,6 +4684,8 @@ function/s QANT_HoldStringFromPeakSet(stringin)
 				return "000000"
 			endif
 		case "GAUSSIAN":
+			return num2str(HoldPeakPositions)+num2str(HoldPeakWidths)+"0"
+		case "GaussPeak":
 			return num2str(HoldPeakPositions)+num2str(HoldPeakWidths)+"0"
 		case "ASYM_GAUS":
 			return num2str(HoldPeakPositions)+num2str(HoldPeakWidths)+"0" + num2str(HoldPeakWidths)
@@ -5838,6 +5846,10 @@ function QANT_geterrorofpeak(peakset,peakerror, peaknum)
 			peakarea = height*width*sqrt(pi/ln(2))/2
 			totalpeakerror = peakarea * sqrt( (sheight/height)^2 + (swidth/width)^2 )
 			break
+		case "GaussPeak":
+			peakarea = height*width*sqrt(pi/ln(2))/2
+			totalpeakerror = peakarea * sqrt( (sheight/height)^2 + (swidth/width)^2 )
+			break
 		case "NEXAFS_EDGE":
 			peakarea = height
 			totalpeakerror = sheight
@@ -5859,6 +5871,9 @@ function QANT_getareaofpeak(peakset, peaknum)
 	variable other = str2num(stringfromlist(4,peakset[peaknum]))
 	strswitch(peaktype)
 		case "GAUSSIAN":
+			peakarea = height*width*sqrt(pi/ln(2))/2
+			break
+		case "GaussPeak":
 			peakarea = height*width*sqrt(pi/ln(2))/2
 			break
 		case "NEXAFS_EDGE":
@@ -8367,7 +8382,8 @@ function QANT_AddPeakstoPlotEdit(peakset)
 			wave cWave = $QANT_MakeCwaveFromPeakSet(peakset[i],1) 
 			funcref MPF2_PeakFunctionTemplate Peakfunc = $PeakFuncName
 			duplicate /o xwave, $("Peak_"+num2str(i))
-			Peakfunc(cwave,$("Peak_"+num2str(i)),xwave)
+			wave peak_current = $("Peak_"+num2str(i))
+			Peakfunc(cwave,peak_current,xwave)
 			appendtograph /w=QANT_PeaksetEditWindow#G0 $("Peak_"+num2str(i)) /TN=$("Peak_"+num2str(i))//$(peakname+stringfromlist(2,Peakset[i]))
 			appendtograph /w=QANT_PeaksetEditWindow#G0 $("Peak_"+num2str(i)) /TN=$("Peak_"+num2str(i)+"_h")//$(peakname+stringfromlist(2,Peakset[i])+"_h")
 			listofpeaktraces += "Peak_"+num2str(i)+"_h;"
