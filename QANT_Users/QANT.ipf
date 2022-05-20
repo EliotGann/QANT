@@ -12012,3 +12012,161 @@ Function QANT_ref_axis_pop(pa) : PopupMenuControl
 
 	return 0
 End
+
+
+function /s QANT_NEXAFSfileEXt_DiaNX() // MDA
+	return ".nxs"
+end
+
+
+function /s QANT_LoadNEXAFSfile_DiaNX(pathn)
+	string pathn
+	variable fileid
+	hdf5OpenFile /R/Z fileid as pathn
+	if(! (strlen(s_filename)>0) )
+		print "nothing loaded"
+		return ""
+	endif
+	string fullpath = S_path + s_filename
+	
+	string file = s_filename
+	string scanname = ParseFilePath(3, fullpath, ":", 1, 0)
+	dfref savedir = getdataFolderDFR()
+	setdatafolder root:
+	newdatafolder /O/S NEXAFS
+	newdatafolder /O/S Scans
+	newdatafolder /O/S $cleanupname(scanname,1)
+	dfref homedf = getdataFolderDFR()
+	
+	newdatafolder /o rawdata
+	
+	hdf5LoadGroup /CONT=2 /ENUM=2 /IGOR=0 /O /R rawdata, fileid , "entry1"
+	setdatafolder rawdata
+	
+	dfref rawdf = getdatafolderDFR()
+	wave /t /z end_time,start_time
+	
+	
+	
+	string endtime = end_time[0]
+	string starttime = start_time[0]
+	variable year,mon,day,hour,minute,second
+	sscanf endtime, "%d-%d-%dT%d:%d:%f",year,mon,day,hour,minute,second
+	variable endtimeseconds =  date2secs(year,mon,day) + 3600*hour + 60 * minute + second
+	sscanf starttime, "%d-%d-%dT%d:%d:%f",year,mon,day,hour,minute,second
+	variable starttimeseconds =  date2secs(year,mon,day) + 3600*hour + 60 * minute + second
+	variable scantime = endtimeseconds - starttimeseconds
+	
+	
+	setdatafolder homedf
+	string /g filename = fullpath
+	string /g acqtime = secs2Time(scantime,3)
+	
+	getfilefolderinfo /q/z filename
+	
+	string /g filesize
+	sprintf filesize, "%d" ,v_logEOF
+	string /g cdate
+	sprintf cdate, "%d" ,v_creationdate
+	string /g mdate
+	sprintf mdate, "%d" ,v_modificationdate
+	
+	
+	string /g notes
+	if(strlen(notes)*0!=0)
+		notes = ""
+	endif
+	string /g SampleName
+	if(strlen(SampleName)*0!=0)
+		SampleName = scanname
+	endif
+	string /g SampleSet
+	if(strlen(SampleSet)*0!=0)
+		SampleSet = ""
+	endif
+	string /g refscan
+	if(strlen(refscan)*0!=0)
+		refscan = "Default"
+	endif
+	string /g darkscan
+	if(strlen(darkscan)*0!=0)
+		darkscan = "Default"
+	endif
+	string /g enoffset
+	if(strlen(enoffset)*0!=0)
+		enoffset = "Default"
+	endif
+	string /g metadata = ""
+	
+	// get the extra parameters from before_scan
+	setdatafolder rawdf
+	
+	setdatafolder before_scan
+	DFREF mddf = getdataFolderDFR()
+	dfref folder
+	string wavefolder
+	variable i,winfo
+	for(i=0;i<countObjectsdfr(mddf,4);i+=1)
+		setdatafolder mddf
+		setdatafolder GetIndexedObjNameDFR(mddf,4,i)
+		folder = getdataFolderDFR()
+		wave /z wtest = $GetIndexedObjNameDFR(folder,1,0)
+		winfo = wavetype(wtest,1)
+		if(winfo==1)
+			wave w = $GetIndexedObjNameDFR(folder,1,0)
+			metadata += nameOfWave(w)+ ":" + num2str(w[0]) + ";"
+		elseif(winfo==2)
+			wave /t wt = $GetIndexedObjNameDFR(folder,1,0)
+			metadata += nameOfWave(wt)+ ":" + wt[0] + ";"
+		endif
+	endfor
+	
+	setdatafolder homedf
+	make /o/t/n=(itemsinlist(metadata),4) extrainfo
+	extrainfo[][] = stringfromlist(q,stringfromlist(p,metadata),":")
+	variable j
+	string groupname,columnnamesrt="",newcolumnname
+	for(i=0;i<countObjectsDFR(rawdf,4);i+=1)
+		groupname = GetIndexedObjNameDFR(rawdf,4,i)
+		if(stringmatch(groupname,"before_scan"))
+			continue
+		elseif(stringmatch(groupname,"instrument"))
+			continue
+		elseif(stringmatch(groupname,"user01"))
+			continue
+		else
+			setdatafolder rawdf
+			setdatafolder groupname
+			folder = getdatafolderdFR()
+			
+			for(j=0;j<countObjectsDFR(folder,1);j+=1)
+				setdatafolder folder
+				wave /z wtest = $GetIndexedObjNameDFR(folder,1,j)
+				winfo = wavetype(wtest,1)
+				if(winfo==1)
+					wave w = $GetIndexedObjNameDFR(folder,1,j)
+					setdatafolder homedf
+					newcolumnname = (groupname + "_" + nameofwave(w))
+					duplicate /o w, $newcolumnname
+					if(whichListItem(newcolumnname,columnnamesrt)<0)
+						columnnamesrt +=newcolumnname + ";"
+					endif
+				elseif(winfo==2)
+					wave /t wt = $GetIndexedObjNameDFR(folder,1,j)
+					setdatafolder homedf
+					newcolumnname = (groupname + "_" + nameofwave(wt))
+					duplicate /o wt, $newcolumnname
+					if(whichListItem(newcolumnname,columnnamesrt)<0)
+						columnnamesrt +=newcolumnname + ";"
+					endif
+				endif
+			endfor
+		endif
+	endfor
+	
+	make /o/n=(itemsinlist(columnnamesrt)) /T Columnnames = stringfromlist(p,columnnamesrt)
+	
+	setdatafolder foldersave
+	print "Loaded NEXAFS file : " + cleanupname(scanname,1)
+	return 	cleanupname(scanname,1)
+end
