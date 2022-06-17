@@ -19,7 +19,23 @@ Install Github Desktop, create a github account if you haven't already
 
 Also download and install the latest version of Optical Constants Library (seperate github repository https://github.com/EliotGann/Optical-Constants-Database) for optical constants integration.
 
+
 If you install QANT in this way, to update to the latest version all you have to do is go into github desktop and fetch the latest master version which will always be updated here.  You can also make changes to QANT and github will let us merge them nicely!
+
+With newer versions, you also need to install the HDF5 XOP which is included in igor pro.  for that, follow these instructions:
+
+a.) open up Igor Pro  go to Help-> "Show Igor Pro Folder"
+
+b.) from Igor Pro, also go to Help-> "Show Igor Pro User Files"
+
+basically you will be copying or creating links of things in the "igor pro folder" which is in the applications directory on you computer, into your local igor pro user files directory, which is generally in your documents folder.  you should have these two locations open in separate windows now.
+
+c.) from the applications window, go to "more extensions/File Loaders/" and copy the HDF5.xop into the "igor extensions" folder in the documents window (or create a short cut)
+
+d.) copy the HDF5.ihf to the "igor help files" folder in the documents window (or create a shortcut)
+
+e.) repeat for the "more extensions (64-bit)" and "igor extensions (64 bit)" respectively.
+
 
 For more details on QANT, how it works, and how you should use it, including some videos please see the official publication:
 https://doi.org/10.1107/S1600577515018688
