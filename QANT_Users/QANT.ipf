@@ -933,9 +933,9 @@ function QANT_Loaderfunc()
 	DrawText 13,455,"Sample Set:"
 	DrawText 598,622,"Material Name:"
 	SetDrawEnv fsize= 10
-	DrawText 240,44,"use \"name:\" to limit search to the Sample Name"
+	DrawText 241,42,"use \"name:\" to limit search to the Sample Name"
 	SetDrawEnv fsize= 10
-	DrawText 246,56,"or \"note:\", \"angle:\", \"scan:\", \"set:\" or \"other:\""
+	DrawText 272,52,"or \"note:\", \"angle:\", \"scan:\", \"set:\" or \"other:\""
 	SetDrawEnv fsize= 10
 	DrawText 504,129,"Double Normalization Channel:"
 	SetDrawEnv fsize= 10
@@ -969,9 +969,9 @@ function QANT_Loaderfunc()
 	SetVariable QANT_strval_Matchstring,pos={325,11},size={151,16},bodyWidth=151,proc=QANT_Matchstr,title=" "
 	SetVariable QANT_strval_Matchstring,value= root:NEXAFS:matchstr,live= 1
 	Button QANT_but_LoadFile,pos={128,476},size={70,37},proc=QANT_LoadBut,title="Load\rsingle file",font="Arial",fSize=10
-	Button QANT_but_LoadDif,pos={134.00,541.00},size={66.00,38.00},proc=QANT_LoadDirBut,title="Reload Directory",font="Arial",fSize=10
+	Button QANT_but_LoadDif,pos={143.00,541.00},size={62.00,38.00},proc=QANT_LoadDirBut,title="Reload\rDirectory",font="Arial",fSize=10
 	Button QANT_but_browse,pos={18,476},size={104,37},proc=QANT_browse,title="Browse for Directory",font="Arial",fSize=10
-	CheckBox QANT_autoload,pos={20,544},size={118,24},proc=QANT_AutoloaderCheck,title="Auto Load Directory",font="Arial",fSize=10
+	CheckBox QANT_autoload,pos={20.00,544.00},size={109.00,14.00},proc=QANT_AutoloaderCheck,title="Auto Load Directory",font="Arial",fSize=10
 	CheckBox QANT_autoload,value= 0
 	TitleBox QANT_title_AutoloadDir,pos={19,518},size={277,21}
 	TitleBox QANT_title_AutoloadDir,variable= root:NEXAFS:directory,fixedSize=1
@@ -1073,8 +1073,8 @@ function QANT_Loaderfunc()
 	SetVariable QANT_setvar_Materials_xmax,pos={745,585},size={92,16},bodyWidth=62,title="X max",font="Arial",fSize=10
 	SetVariable QANT_setvar_Materials_xmax,value= root:NEXAFS:MatFittingXMax
 
-	PopupMenu FileFormatPopup,pos={13.00,561.00},size={152.00,19.00},title="File Type:"
-	PopupMenu FileFormatPopup,mode=1,popvalue=FileType,value= #"QANT_FTypeList()",proc=QANT_popFType
+	PopupMenu FileFormatPopup,pos={13.00,561.00},size={106.00,19.00},proc=QANT_popFType,title="Type:"
+	PopupMenu FileFormatPopup,mode=4,popvalue="SST_XDAC",value=#"QANT_FTypeList()"
 	
 	Button QANT_CloneBut,pos={206.00,542.00},size={95.00,20.00},proc=QANT_Clone_but,title="Clone Top Graph"
 	Button QANT_CloneBut,font="Arial",fSize=10
@@ -11040,10 +11040,10 @@ function /s QANT_FTypeList()
 end
 
 
-function /s QANT_NEXAFSfileEXt_Dean() // Dean's XDAC
+function /s QANT_NEXAFSfileEXt_SST_XDAC() // Dean's XDAC
 	return "????"
 end
-function /s QANT_LoadNEXAFSfile_Dean(pathn) // Dean's XDAC
+function /s QANT_LoadNEXAFSfile_SST_XDAC(pathn) // Dean's XDAC
 	string pathn
 	variable fileref
 	open/r/F="NEXAFS files (*.*,):*.*;" fileref as pathn
