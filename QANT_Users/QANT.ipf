@@ -5605,13 +5605,13 @@ function QANT_PlotPeakResults()
 		endfor
 	endif
 	//print GetWavesDataFolder(tracenametowaveref("QANT_Resultplot",stringfromlist(0,listofpeaksets)),0)
-	make /o/n=(nfits) angles = cos(QANT_getAngle(scannames[p])*pi/180)^2
+	make /o/n=(nfits) angles = QANT_getAngle(scannames[p])*pi/180
 	
 	if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
-		make /o/n=(nfits) angles = COS(QANT_getAngle(fitnames[p])*pi/180)^2
+		make /o/n=(nfits) angles = QANT_getAngle(fitnames[p])*pi/180
 		if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 		// try other ? 
-			make /o/n=(nfits) angles = cos(QANT_getOther(scannames[p])*pi/180)^2
+			make /o/n=(nfits) angles = QANT_getOther(scannames[p])*pi/180
 			if(wavemin(angles) == wavemax(angles) || sum(angles)*0 != 0)
 				// try beamlineenergy from wavenotes?
 //				angles = numberbykey("BeamlineEnergy",note(scanwaves[p]), "=",";")
@@ -5626,6 +5626,9 @@ function QANT_PlotPeakResults()
 				useother=0 //(WE ARE GOOD)
 			endif
 		endif
+	endif
+	if(wavemax(angles)<=pi/2 + 0.01)
+		angles = cos(angles)^2
 	endif
 	string wname = ""
 	variable angleout 
