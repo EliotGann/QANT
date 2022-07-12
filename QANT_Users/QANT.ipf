@@ -4551,14 +4551,14 @@ function QANT_multipeakBatchfit(peakset, datawaves, xwaves, tracenames,name)
 	ListOfPeaks[][0] = stringfromlist(0,peakset[p]) + " at " + stringfromlist(2,peakset[p])
 	ListOfPeaksSplitErr[][0]=ListOfPeaks[p][0]
 	make /o/n=(s.npeaks+1,4) ListOfPeaksSel = 0
-	make /o/n=4 /t listpeakcolumnnames = {"Peak","Stšhr 9.16a","Stšhr 9.17a","Stšhr 9.14a"}
+	make /o/n=4 /t listpeakcolumnnames = {"Peak","Stöhr 9.16a","Stöhr 9.17a","Stöhr 9.14a"}
 	findvalue /TEXT=name ListOfGroupFits
 	QANT_PeakFitResultsPanelfunc(val = v_value)
 	dowindow QANT_Plot
 	if(v_flag)
 		QANT_addPeaksettoPlot(peaksets[nfits-1])
 	endif
-	string outputstring = "Peak\tFit to Stšhr 9.16a\tUncertainty\tFit to Stšhr 9.17a\tUncertainty\tFit to Stšhr 9.14a\tUncertainty\r"
+	string outputstring = "Peak\tFit to Stöhr 9.16a\tUncertainty\tFit to Stšhr 9.17a\tUncertainty\tFit to Stšhr 9.14a\tUncertainty\r"
 	for(j=0;j<dimsize(peakset,0);j+=1)
 		for(k=0;k<7;k+=1)
 			outputstring += listofpeaksSplitErr[j][k] + "\t"
@@ -5026,7 +5026,7 @@ function QANT_PeakFitResultsPanelfunc([val])
 	SetVariable Var_CombinedResult17a,pos={616,178},size={120,16},title="9.17a"
 	SetVariable Var_CombinedResult17a,value= root:NEXAFS:fitting:fitresult17a
 	PopupMenu popup0,pos={323,197},size={173,21},proc=QANT_Fit_PlotfitFormula_pop,title="Use: "
-	PopupMenu popup0,mode=plot16a,value= #"\"Vector symmetry (Stšhr 9.16a);Planar symmetry (Stšhr 9.17a);In-Plane Alignment (Stšhr 9.14a)\""
+	PopupMenu popup0,mode=plot16a,value= #"\"Vector symmetry (Stöhr 9.16a);Planar symmetry (Stöhr 9.17a);In-Plane Alignment (Stöhr 9.14a)\""
 	SetVariable Var_CombinedResultaligned,pos={547,197},size={120,16},title="9.14a"
 	SetVariable Var_CombinedResultaligned,value= root:NEXAFS:fitting:fitresultaligned
 	QANT_UpdateFitResults()
@@ -5792,21 +5792,21 @@ function QANT_PlotPeakResults()
 					sprintf fitresult16a, "%2.3g ± %2.1g", angleout, w_sigma[0]
 				endif
 				//fitresult16a= num2str(angleout)+" ± " + num2str(w_sigma[0])
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry formula Stšhr 9.16a\r\\F'Symbol'g\\F]0 = " + fitresult16a
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry formula Stöhr 9.16a\r\\F'Symbol'g\\F]0 = " + fitresult16a
 			elseif(plot16a==2)
 				if(w_sigma[0]<1)
 					sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
 				else
 					sprintf fitresult17a, "%2.3g ± %2.1g", angleout, w_sigma[0]
 				endif
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the planar symmetry formula Stšhr 9.17a\r\\F'Symbol'g\\F]0 = " + fitresult17a
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the planar symmetry formula Stöhr 9.17a\r\\F'Symbol'g\\F]0 = " + fitresult17a
 			elseif(plot16a==3)
 				if(w_sigma[0]<1)
 					sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
 				else
 					sprintf fitresultaligned, "%2.3g ± %2.1g", angleout, w_sigma[0]
 				endif
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry with in-plane alignment Stšhr 9.14a\r\\F'Symbol'g\\F]0 = " + fitresultaligned
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry with in-plane alignment Stöhr 9.14a\r\\F'Symbol'g\\F]0 = " + fitresultaligned
 			endif
 			putscrapText num2str(angleout) + "\t" + num2str(w_sigma[0])
 		else
