@@ -11583,7 +11583,13 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		if(strlen(listofjsonl)>0)
 			pnamemd = pnameimages
 		else
-			pnamemd = pname
+			listofjsonl = IndexedFile($pnameimages, -1, ".json")
+			if(strlen(listofjsonl)>0)
+				pnamemd = pnameimages
+			else
+				pnamemd = pname
+			endif
+			
 		endif
 	endif
 
@@ -11635,7 +11641,7 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		
 	endfor
 
-	MultiThread monitorwaves[] = load_file(filerefs[p])
+	MultiThread monitorwaves[] = load_file_seq(filerefs[p]) // new files with three columns
 
 	close /A
 	for(i=0;i<nummonitors;i+=1)
@@ -11664,6 +11670,11 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 	make /o/t mdlist
 	
 	string jsonfiles= indexedfile($(pnamemd),-1,".jsonl")
+	string jsonext = ".jsonl"
+	if(strlen(jsonfiles)==0)
+		jsonfiles= indexedfile($(pnamemd),-1,".json")
+		jsonext = ".json"
+	endif
 	variable jsonfound=0
 	string metadatafilename
 	string /g metadata=""
@@ -11673,7 +11684,7 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		mdlist = {"could not find metadata jsonl"}
 	else
 		jsonfound = 1
-		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*jsonl"))
+		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+"*"+jsonext))
 		metadata = QANT_addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
@@ -11733,7 +11744,13 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 		if(strlen(listofjsonl)>0)
 			pnamemd = pnameimages
 		else
-			pnamemd = pname
+			listofjsonl = IndexedFile($pnameimages, -1, ".json")
+			if(strlen(listofjsonl)>0)
+				pnamemd = pnameimages
+			else
+				pnamemd = pname
+			endif
+			
 		endif
 	endif
 
@@ -11786,7 +11803,7 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 		monitornames[0] = wavenames[i]
 	endfor
 
-	MultiThread monitorwaves[] = load_file(filerefs[p])
+	MultiThread monitorwaves[] = load_file_seq(filerefs[p])
 
 	close /A
 	for(i=0;i<nummonitors;i+=1)
@@ -11846,6 +11863,12 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 	make /o/t mdlist
 	
 	string jsonfiles= indexedfile($(pnamemd),-1,".jsonl")
+	
+	string jsonext = ".jsonl"
+	if(strlen(jsonfiles)==0)
+		jsonfiles= indexedfile($(pnamemd),-1,".json")
+		jsonext = ".json"
+	endif
 	variable jsonfound=0
 	string metadatafilename
 	string /g metadata=""
@@ -11855,7 +11878,7 @@ function load_bluesky_streaming(string basename,string pathtodata,string pname)
 		mdlist = {"could not find metadata jsonl"}
 	else
 		jsonfound = 1
-		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*jsonl"))
+		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*"+jsonext))
 		metadata = QANT_addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
@@ -11996,6 +12019,32 @@ threadsafe function /wave load_file(variable file_ref)
 	
 	for(linenum=0; linenum < numLinesInFile; linenum++)
 		sscanf fileLinesTextWave[linenum], "%f,%f,*", num1, num2
+		monitor_wave[linenum][0] = num1
+		monitor_wave[linenum][1] = num2
+	EndFor
+	
+	return monitor_wave
+end
+
+
+threadsafe function /wave load_file_seq(variable file_ref)
+	// AL: We assume that the first line of the file contains header information,
+	// so read that in even though we don't do anything with it.
+	String line
+	FReadLine file_ref, line
+	
+	FStatus file_ref
+	Variable remainingFileSize = V_logEOF - V_filePos
+	String fileContents = ""
+	fileContents = PadString(fileContents, remainingFileSize, 0)
+	FBinRead file_ref, fileContents	// Read entire file into a string
+	WAVE/T fileLinesTextWave = ListToTextWave(fileContents, "\n")
+	Variable numLinesInFile = numpnts(fileLinesTextWave)
+	make /d/n=(numLinesInFile,2) /free monitor_wave
+	Variable linenum=0, num1, num2, seq
+	
+	for(linenum=0; linenum < numLinesInFile; linenum++)
+		sscanf fileLinesTextWave[linenum], "%f,%f,%f,*",seq, num1, num2
 		monitor_wave[linenum][0] = num1
 		monitor_wave[linenum][1] = num2
 	EndFor
