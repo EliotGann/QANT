@@ -11684,7 +11684,7 @@ function load_bluesky_RSoXS(string basename,string pathtodata,string pname)
 		mdlist = {"could not find metadata jsonl"}
 	else
 		jsonfound = 1
-		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+"*"+jsonext))
+		metadatafilename = stringfromlist(0,greplist(jsonfiles,"^"+basename+".*"+jsonext))
 		metadata = QANT_addmetadatafromjson(pnamemd,"institution",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"project_name",metadatafilename,metadata)
 		metadata = QANT_addmetadatafromjson(pnamemd,"proposal_id",metadatafilename,metadata)
@@ -11921,7 +11921,7 @@ end
 
 
 
-function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
+function /wave old_splitsignal(wavein,times, rises, falls, goodpulse)
 	wave wavein,times, rises, falls,goodpulse
 	
 	make /free /n=(dimsize(wavein,0)) /d timesin = wavein[p][0], datain = wavein[p][1]
@@ -11941,15 +11941,15 @@ function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
 	pntlower1 = binarysearch(timesin,times[p]-1.5)
 	insertpoints /v=0 0,1,pntlower
 	make /free temprises, tempfalls
-	waveout = mean(datain,pntlower1[p]+2,pntupper[p]-0)
-	stdwave = sqrt(variance(datain,pntlower1[p]+2,pntupper[p]-0))
+	waveout = mean(datain,pntlower1[p]+1,pntupper[p]-0)
+	stdwave = sqrt(variance(datain,pntlower1[p]+1,pntupper[p]-0))
 	variable i, meanvalue, alreadygood, err
 	for(i=0;i<dimsize(times,0);i+=1)
-		if(pntupper[i] - pntlower[i] < 3)
+		if(pntupper[i] - pntlower[i] < 2)
 			continue
 		endif
 		//meanvalue = mean(datain,pntlower[i],pntupper[i])
-		meanvalue = (5/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
+		meanvalue = (4/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
 		try
 			findlevels /B=3/EDGE=1 /Q /P /D=temprises /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE // look for rising and falling edges
 			findlevels /B=3/EDGE=2 /Q /P /D=tempfalls /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE
@@ -11969,6 +11969,68 @@ function /wave QANT_splitsignal(wavein,times, rises, falls, goodpulse)
 		else
 			if(alreadygood) // have we already found the rising and falling times?
 				waveout[i] = mean(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i]))
+				stdwave[i] = sqrt(variance(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i])))
+			else
+				goodpulse[i]=0
+			endif
+		endif
+	endfor
+	
+	//curvefit
+	return waveout
+end
+
+function /wave QANT_splitsignal(wavein, times, rises, falls, goodpulse)
+	wave wavein,times, rises, falls,goodpulse // take the time from the primary wave, and get a representation of the monitors around this time
+	// look for pulses and pick out one the pulse height points if possible, otherwise just mean.
+	// rises, falls, and goodpulse are itterative measures, so if a strong signal is measured first, these value will make the proceeding calls more accurate
+	// thus the behavior will vary depending on the order you run the monitors through this function
+	
+	make /free /n=(dimsize(wavein,0)) /d timesin = wavein[p][1], datain = wavein[p][0]
+	
+	string name = nameofwave(wavein)
+	wave /z waveout = $("_"+name)
+	//if(numpnts(wavein)<2* numpnts(times))
+	//	//print "not valid waves"
+	//	return waveout
+	//endif
+	make /o/n=(dimsize(times,0)) $("m_"+name), $("s_"+name), $("f_"+name)
+	wave waveout = $("m_"+name), stdwave = $("s_"+name), fncwave = $("f_"+name)
+	make /n=(dimsize(times,0)) /free pntlower, pntupper
+	pntupper = binarysearch(timesin,times[p])
+	pntupper = pntupper[p]==-2 ? numpnts(timesin)-1 : pntupper[p]
+	duplicate /o /free pntupper, pntlower, pntlower1
+	pntlower1 = binarysearch(timesin,times[p]-1.5)
+	insertpoints /v=0 0,1,pntlower
+	make /free temprises, tempfalls
+	waveout = median(datain,pntlower1[p]+0,pntupper[p]-0)
+	stdwave = sqrt(variance(datain,pntlower1[p]+0,pntupper[p]-0))
+	variable i, meanvalue, alreadygood, err
+	for(i=0;i<dimsize(times,0);i+=1)
+		if(pntupper[i] - pntlower[i] < 1)
+			continue
+		endif
+		//meanvalue = mean(datain,pntlower[i],pntupper[i])
+		meanvalue = (4/10) *(wavemin(datain,pntlower[i],pntupper[i]) + wavemax(datain,pntlower[i],pntupper[i]))
+		try
+			findlevels /B=3/EDGE=1 /Q /P /D=temprises /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE // look for rising and falling edges
+			findlevels /B=3/EDGE=2 /Q /P /D=tempfalls /R=[max(0,pntlower[i]),min(numpnts(datain)-1,pntupper[i])] datain, meanvalue;AbortonRTE
+		catch
+			err = getRTError(1)
+			//print getErrMessage(err)
+			goodpulse[i]=0
+			break
+		endtry
+		if(dimsize(temprises,0) == 1 && dimsize(tempfalls,0)== 1 ) // did we find a single pulse?
+			alreadygood = goodpulse[i]
+			rises[i] = timesin(temprises[0]) // if so, change them to times (so they work for all channels)
+			falls[i] = timesin(tempfalls[0])
+			waveout[i] = median(datain,binarysearchinterp(timesin,rises[i])+1,binarysearchinterp(timesin,falls[i])-1)
+			stdwave[i] = sqrt(variance(datain,binarysearchinterp(timesin,rises[i])+1,binarysearchinterp(timesin,falls[i])-1))
+			goodpulse[i]=1
+		else
+			if(alreadygood) // have we already found the rising and falling times?
+				waveout[i] = median(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i]))
 				stdwave[i] = sqrt(variance(datain,binarysearch(timesin,rises[i])+0,binarysearch(timesin,falls[i])))
 			else
 				goodpulse[i]=0
@@ -12044,7 +12106,7 @@ threadsafe function /wave load_file_seq(variable file_ref)
 	Variable linenum=0, num1, num2, seq
 	
 	for(linenum=0; linenum < numLinesInFile; linenum++)
-		sscanf fileLinesTextWave[linenum], "%f,%f,%f,*",seq, num1, num2
+		sscanf fileLinesTextWave[linenum], "%f,%f,%f,*",num2, num1, seq
 		monitor_wave[linenum][0] = num1
 		monitor_wave[linenum][1] = num2
 	EndFor
@@ -12242,12 +12304,10 @@ end
 
 
 
-function cleanup_NEXAFS_channel([interps, interpf, minstep, weightforward])
+function cleanup_NEXAFS_channel([minstep, weightforward])
 	// makes a new scan with cleaned up channels - original channel is still available, cleaned scan will append clean_ to scanname
 	
-	variable interps, interpf, minstep, weightforward
-	interps=  paramisdefault(interps) ? 1e-12 : interps // the s input to the interpolate2 function
-	interpf=  paramisdefault(interpf) ? 6 : interpf // the f input to the interpolate2 function
+	variable minstep, weightforward
 	minstep=  paramisdefault(minstep) ? 0.01 : minstep // the minimum x axis step to enforce
 	weightforward=  paramisdefault(weightforward) ? 1 : weightforward // the weight to use for forward sweeps (backward sweeps are weight 1)
 	
@@ -12381,9 +12441,11 @@ function cleanup_NEXAFS_channel([interps, interpf, minstep, weightforward])
 			
 				//interpolate the y data onto a fixed x axis with min step
 				if(V_numNans + V_numINFs < index_new-10)
-					interpolate2 /f=(interpf) /i=3 /t=3 /s=(interps) /y=interp_sweep sweep_x, sweep_y
-					
-					
+					//interpolate2 /i=3 /t=2 /y=interp_sweep sweep_x, sweep_y
+					interp_sweep = interp(final_x_wave[p], sweep_x, sweep_y )
+					if(abs(wavemax(sweep_x)-wavemax(final_x_wave)) + abs(wavemin(sweep_x)-wavemin(final_x_wave))>1)
+						continue // this sweep didn't finish so don't add it in.
+					endif
 					//average the sweeps with optional different weightings from forward (odd) and reverse (even) sweeps
 					if(j/2 == round(j/2))
 						final_y_wave = (final_y_wave * current_weight + interp_sweep * 1)/ (current_weight + 1)
@@ -12392,11 +12454,7 @@ function cleanup_NEXAFS_channel([interps, interpf, minstep, weightforward])
 						final_y_wave = (final_y_wave * current_weight + interp_sweep * weightforward)/ (current_weight + weightforward)
 						current_weight += weightforward
 					endif
-				//else
-			//		killwaves new_ywave
-			//		deletepoints i-numdeleted_channels,1,new_columnnames
-			//		numdeleted_channels +=1
-			// I think this is causing problems, deleteing the wrong columns
+					
 				endif
 			endfor
 			// at this point the final_y_wave and final_x_wave should be good.
