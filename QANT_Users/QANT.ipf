@@ -10474,14 +10474,14 @@ Function QANT_FitMaterials(ba) : ButtonControl
 					volcoef=nan
 					volsigma=nan
 				endif
-				
+				string good_tn = cleanupname(replacestring("'",tracename,""),0)
 				//making a new window for each fit
-				display /w=(0,300,500,600)/k=1 ywave /TN=$tracename vs xwave
-				ModifyGraph lsize($tracename)=3
-				ModifyGraph rgb($tracename)=(0,0,0)
+				display /w=(0,300,500,600)/k=1 ywave /TN=$good_tn vs xwave
+				ModifyGraph lsize($good_tn)=3
+				ModifyGraph rgb($good_tn)=(0,0,0)
 				Legend/C/N=text0/F=0/B=1/J/A=RC/X=5.00/Y=0.00
-				wave fitxwave = $cleanupname("fitx_"+tracename,1)
-				wave fitywave = $cleanupname("fit_"+tracename,1)
+				wave fitxwave = $cleanupname("fitx_"+good_tn,1)
+				wave fitywave = $cleanupname("fit_"+good_tn,1)
 				appendtograph fitywave /TN=Fit vs fitxwave
 				modifygraph rgb(fit) = (65000,0,0), lsize(fit)=1.5
 				colortab2wave Spectrum
@@ -12246,9 +12246,9 @@ function cleanup_NEXAFS_channel([interps, interpf, minstep, weightforward])
 	// makes a new scan with cleaned up channels - original channel is still available, cleaned scan will append clean_ to scanname
 	
 	variable interps, interpf, minstep, weightforward
-	interps=  paramisdefault(interps) ? 1e-12 : interps // the s input to the interpolate2 function
-	interpf=  paramisdefault(interpf) ? 6 : interpf // the f input to the interpolate2 function
-	minstep=  paramisdefault(minstep) ? 0.01 : minstep // the minimum x axis step to enforce
+	interps=  paramisdefault(interps) ? 2e-13 : interps // the s input to the interpolate2 function
+	interpf=  paramisdefault(interpf) ? 4 : interpf // the f input to the interpolate2 function
+	minstep=  paramisdefault(minstep) ? 0.1 : minstep // the minimum x axis step to enforce
 	weightforward=  paramisdefault(weightforward) ? 1 : weightforward // the weight to use for forward sweeps (backward sweeps are weight 1)
 	
 		
