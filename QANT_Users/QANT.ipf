@@ -9804,7 +9804,10 @@ function /wave SpliceintoF2(BareAtomMu, BetaWave, EnWave)
 		endif
 		duplicate /free betawave, scaledbeta
 		scaledbeta = ((betawave-dataoffset)/datascale) * barescale + bareoffset // scales the data to the bare atom spectra
-	
+		variable /g scalefactor = datascale
+		variable /g scalefactor2 = barescale
+		variable /g offsetfactor = dataoffset
+		variable /g offsetfactor2 = bareoffset
 	// This section splices the data into the bare atom spectra
 		variable lowercutoffindex = binarysearch(energy,enwave[preedgeoffset])
 		variable uppercutoffindex = binarysearch(energy,enwave[postedgeoffset])//dimsize(enwave,0)-121]) // changed from 21 to 11
