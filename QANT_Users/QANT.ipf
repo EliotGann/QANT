@@ -12109,7 +12109,7 @@ threadsafe function /wave load_file_seq(variable file_ref)
 	Variable linenum=0, num1, num2, seq
 	
 	for(linenum=0; linenum < numLinesInFile; linenum++)
-		sscanf fileLinesTextWave[linenum], "%f,%f,%f,*",num2, num1, seq
+		sscanf fileLinesTextWave[linenum], "%f,%f,%f,*",seq,num1, num2 
 		monitor_wave[linenum][0] = num1
 		monitor_wave[linenum][1] = num2
 	EndFor
