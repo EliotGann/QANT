@@ -1,6 +1,6 @@
 # QANT
 Quick AS NEXAFS Tool
-developed by Eliot Gann of the Australian Synchrotron and currently NIST (eliot.gann@nist.gov)
+developed by Eliot Gann of the Australian Synchrotron, NIST and currently BNL (egann@bnl.gov)
 an Igor Pro set of procedures, best working on Igor Pro v 8+, but compatible with Igor Pro 6+
 
 For installation, it is suggested that you follow these instructions:
