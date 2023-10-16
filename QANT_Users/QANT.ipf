@@ -11122,14 +11122,10 @@ function /s QANT_LoadNEXAFSfile_SST_XDAC(pathn) // Dean's XDAC
 	
 	string /g acqtime = num2str(year) + " " + num2str(month) + " " + num2str(day) + " " + num2str(hour)+":" + num2str(minute) +":" + num2str(second)
 	
-	
 	string samp, angle, bias
 	grep/Q/LIST/E="/Angle [1234567890]*" fullpath
 	
-
-	
 	// Formulate regEx search string depending on contents of metadata line
-	
 	//Check for ecc var
 	variable hasECC = Stringmatch(s_value, "*ecc*")
 	
@@ -11142,7 +11138,6 @@ function /s QANT_LoadNEXAFSfile_SST_XDAC(pathn) // Dean's XDAC
 		regStr = "^([^/]*)/Angle ([-.1234567890]*)/Bias ([-.1234567890]*)"
 	endif
 		
-	//splitstring /e="(?(?=ecc)^([^/]*)/Angle ([-.1234567890]*)/ecc (?:[-.1234567890]*)uA/Bias ([-.1234567890]*)|^([^/]*)/Angle ([-.1234567890]*)/Bias ([-.1234567890]*))" s_value, samp, angle, bias
 	splitstring /e = regStr s_value, samp, angle, bias
 	
 	string notes2add =""
