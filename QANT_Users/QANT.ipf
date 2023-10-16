@@ -4567,14 +4567,14 @@ function QANT_multipeakBatchfit(peakset, datawaves, xwaves, tracenames,name)
 	ListOfPeaks[][0] = stringfromlist(0,peakset[p]) + " at " + stringfromlist(2,peakset[p])
 	ListOfPeaksSplitErr[][0]=ListOfPeaks[p][0]
 	make /o/n=(s.npeaks+1,4) ListOfPeaksSel = 0
-	make /o/n=4 /t listpeakcolumnnames = {"Peak","Stöhr 9.16a","Stöhr 9.17a","Stöhr 9.14a"}
+	make /o/n=4 /t listpeakcolumnnames = {"Peak","StÃ¶hr 9.16a","StÃ¶hr 9.17a","StÃ¶hr 9.14a"}
 	findvalue /TEXT=name ListOfGroupFits
 	QANT_PeakFitResultsPanelfunc(val = v_value)
 	dowindow QANT_Plot
 	if(v_flag)
 		QANT_addPeaksettoPlot(peaksets[nfits-1])
 	endif
-	string outputstring = "Peak\tFit to Stöhr 9.16a\tUncertainty\tFit to Stšhr 9.17a\tUncertainty\tFit to Stšhr 9.14a\tUncertainty\r"
+	string outputstring = "Peak\tFit to StÃ¶hr 9.16a\tUncertainty\tFit to StÂšhr 9.17a\tUncertainty\tFit to StÂšhr 9.14a\tUncertainty\r"
 	for(j=0;j<dimsize(peakset,0);j+=1)
 		for(k=0;k<7;k+=1)
 			outputstring += listofpeaksSplitErr[j][k] + "\t"
@@ -5042,7 +5042,7 @@ function QANT_PeakFitResultsPanelfunc([val])
 	SetVariable Var_CombinedResult17a,pos={616,178},size={120,16},title="9.17a"
 	SetVariable Var_CombinedResult17a,value= root:NEXAFS:fitting:fitresult17a
 	PopupMenu popup0,pos={323,197},size={173,21},proc=QANT_Fit_PlotfitFormula_pop,title="Use: "
-	PopupMenu popup0,mode=plot16a,value= #"\"Vector symmetry (Stöhr 9.16a);Planar symmetry (Stöhr 9.17a);In-Plane Alignment (Stöhr 9.14a)\""
+	PopupMenu popup0,mode=plot16a,value= #"\"Vector symmetry (StÃ¶hr 9.16a);Planar symmetry (StÃ¶hr 9.17a);In-Plane Alignment (StÃ¶hr 9.14a)\""
 	SetVariable Var_CombinedResultaligned,pos={547,197},size={120,16},title="9.14a"
 	SetVariable Var_CombinedResultaligned,value= root:NEXAFS:fitting:fitresultaligned
 	QANT_UpdateFitResults()
@@ -5726,39 +5726,39 @@ function QANT_PlotPeakResults()
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresult17a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresultaligned, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 			elseif(plot16a==2)
 				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresult16a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresult16a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Alignment_9_14a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresultaligned, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 			elseif(plot16a==3)
 				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Plane_9_17a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D 
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresult17a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				FuncFit/W=2/q/H="00"/NTHR=0 QANT_Nexafs_Vector_9_16a W_coef  SumofAreas /I=1 /w=ErrorofSumofAreas /X=degangles /D
 				wave w_sigma
 				angleout = abs(mod(w_coef[0],360))
 				angleout = angleout>180 ? angleout-180 : angleout
 				angleout = angleout>90 ? 180-angleout : angleout
-				sprintf fitresult16a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+				sprintf fitresult16a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 			endif
 			
 			 // do the final fit of the data
@@ -5789,11 +5789,11 @@ function QANT_PlotPeakResults()
 			angleout = angleout>90 ? 180-angleout : angleout
 			if(useother)
 				string sincurveresults = "Fit to a sin wave with period of 180 gives"
-				string format ="%2.3g ± %2.1g\r Minimum R2 = %2.3g ± %2.1g"
+				string format ="%2.3g Â± %2.1g\r Minimum R2 = %2.3g Â± %2.1g"
 			//	//sincurveresults += "\rY offset = " + num2str(w_coef[0]) + " +/- " + num2str(w_sigma[0]) 
 			//	//sincurveresults += "\rAmplitude = " + num2str(w_coef[1])  + " +/- " + num2str(w_sigma[1]) 
-			//	sincurveresults += "\rDichroic Ratio = " + num2str(w_coef[1]/w_coef[0])  + " ± " + num2str(sqrt((w_sigma[1]/w_coef[0])^2 + (w_coef[1]*w_sigma[0]/w_coef[0]^2)^2 )) 
-			//	sincurveresults += "\rMinimum R2 = " + num2str(-w_coef[3]* 180/(2*pi) - 45)  + " ± " + num2str(abs(w_sigma[3]* 180/(2*pi)) ) 
+			//	sincurveresults += "\rDichroic Ratio = " + num2str(w_coef[1]/w_coef[0])  + " Â± " + num2str(sqrt((w_sigma[1]/w_coef[0])^2 + (w_coef[1]*w_sigma[0]/w_coef[0]^2)^2 )) 
+			//	sincurveresults += "\rMinimum R2 = " + num2str(-w_coef[3]* 180/(2*pi) - 45)  + " Â± " + num2str(abs(w_sigma[3]* 180/(2*pi)) ) 
 				variable val1 = w_coef[1]/w_coef[0]
 				variable val2 = sqrt((w_sigma[1]/w_coef[0])^2 + (w_coef[1]*w_sigma[0]/w_coef[0]^2)^2 )
 				variable val3 = -w_coef[3]* 180/(2*pi) - 45
@@ -5803,26 +5803,26 @@ function QANT_PlotPeakResults()
 				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 sincurveresults
 			elseif(plot16a==1)
 				if(w_sigma[0]<1)
-					sprintf fitresult16a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+					sprintf fitresult16a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				else
-					sprintf fitresult16a, "%2.3g ± %2.1g", angleout, w_sigma[0]
+					sprintf fitresult16a, "%2.3g Â± %2.1g", angleout, w_sigma[0]
 				endif
-				//fitresult16a= num2str(angleout)+" ± " + num2str(w_sigma[0])
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry formula Stöhr 9.16a\r\\F'Symbol'g\\F]0 = " + fitresult16a
+				//fitresult16a= num2str(angleout)+" Â± " + num2str(w_sigma[0])
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry formula StÃ¶hr 9.16a\r\\F'Symbol'g\\F]0 = " + fitresult16a
 			elseif(plot16a==2)
 				if(w_sigma[0]<1)
-					sprintf fitresult17a, "%2.4g ± %2.2g", angleout, w_sigma[0]
+					sprintf fitresult17a, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				else
-					sprintf fitresult17a, "%2.3g ± %2.1g", angleout, w_sigma[0]
+					sprintf fitresult17a, "%2.3g Â± %2.1g", angleout, w_sigma[0]
 				endif
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the planar symmetry formula Stöhr 9.17a\r\\F'Symbol'g\\F]0 = " + fitresult17a
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the planar symmetry formula StÃ¶hr 9.17a\r\\F'Symbol'g\\F]0 = " + fitresult17a
 			elseif(plot16a==3)
 				if(w_sigma[0]<1)
-					sprintf fitresultaligned, "%2.4g ± %2.2g", angleout, w_sigma[0]
+					sprintf fitresultaligned, "%2.4g Â± %2.2g", angleout, w_sigma[0]
 				else
-					sprintf fitresultaligned, "%2.3g ± %2.1g", angleout, w_sigma[0]
+					sprintf fitresultaligned, "%2.3g Â± %2.1g", angleout, w_sigma[0]
 				endif
-				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry with in-plane alignment Stöhr 9.14a\r\\F'Symbol'g\\F]0 = " + fitresultaligned
+				TextBox/C/N=text1/A=RB/X=5.00/Y=15.00/E=2 "Fit to the vector symmetry with in-plane alignment StÃ¶hr 9.14a\r\\F'Symbol'g\\F]0 = " + fitresultaligned
 			endif
 			putscrapText num2str(angleout) + "\t" + num2str(w_sigma[0])
 		else
@@ -6207,9 +6207,9 @@ function QANT_FitGroup(fitgroupname,listoffits,listofpeaks, ListOfPeaksSplitErr)
 			angleout = angleout>180 ? angleout-180 : angleout
 			angleout = angleout>90 ? 180-angleout : angleout
 			if(errorout < 1)
-				sprintf tempstring, "%2.4g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.4g Â± %2.1g", angleout, errorout
 			else
-				sprintf tempstring, "%2.3g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.3g Â± %2.1g", angleout, errorout
 			endif			
 			listofpeaks[i][1] = tempstring
 			ListOfPeaksSplitErr[i][1]=num2str(angleout)
@@ -6228,9 +6228,9 @@ function QANT_FitGroup(fitgroupname,listoffits,listofpeaks, ListOfPeaksSplitErr)
 			angleout = angleout>180 ? angleout-180 : angleout
 			angleout = angleout>90 ? 180-angleout : angleout
 			if(errorout < 1)
-				sprintf tempstring, "%2.4g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.4g Â± %2.1g", angleout, errorout
 			else
-				sprintf tempstring, "%2.3g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.3g Â± %2.1g", angleout, errorout
 			endif			
 			listofpeaks[i][2] = tempstring
 			ListOfPeaksSplitErr[i][3]=num2str(angleout)
@@ -6246,9 +6246,9 @@ function QANT_FitGroup(fitgroupname,listoffits,listofpeaks, ListOfPeaksSplitErr)
 			angleout = angleout>180 ? angleout-180 : angleout
 			angleout = angleout>90 ? 180-angleout : angleout
 			if(errorout < 1)
-				sprintf tempstring, "%2.4g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.4g Â± %2.1g", angleout, errorout
 			else
-				sprintf tempstring, "%2.3g ± %2.1g", angleout, errorout
+				sprintf tempstring, "%2.3g Â± %2.1g", angleout, errorout
 			endif			
 			listofpeaks[i][3] = tempstring
 			ListOfPeaksSplitErr[i][5]=num2str(angleout)
@@ -11122,10 +11122,23 @@ function /s QANT_LoadNEXAFSfile_SST_XDAC(pathn) // Dean's XDAC
 	
 	string /g acqtime = num2str(year) + " " + num2str(month) + " " + num2str(day) + " " + num2str(hour)+":" + num2str(minute) +":" + num2str(second)
 	
-	
 	string samp, angle, bias
-	grep/Q/LIST/E="/Angle [1234567890]*/Bias" fullpath
-	splitstring /e="^([^/]*)/Angle ([-.1234567890]*)/Bias ([-.1234567890]*)" s_value, samp, angle, bias
+	grep/Q/LIST/E="/Angle [1234567890]*" fullpath
+	
+	// Formulate regEx search string depending on contents of metadata line
+	//Check for ecc var
+	variable hasECC = Stringmatch(s_value, "*ecc*")
+	
+	string regStr
+	if (hasECC)
+		//2023_2
+		regStr = "^([^/]*)/Angle ([-.1234567890]*)/ecc (?:[-.1234567890]*)uA/Bias ([-.1234567890]*)"
+	else
+		//2023_3
+		regStr = "^([^/]*)/Angle ([-.1234567890]*)/Bias ([-.1234567890]*)"
+	endif
+		
+	splitstring /e = regStr s_value, samp, angle, bias
 	
 	string notes2add =""
 	
